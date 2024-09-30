@@ -7,20 +7,23 @@
 # coverage report to the terminal (that would be annoying since it would force the
 # developer to scroll up to see the test failures).
 #
-# If this script is called with the arguments `--skip-report`, it will not print the
-# coverage report to the terminal; if it is called with the argument `--skip-tests`,
-# it doesn’t run the tests.
+# The script accepts the following arguments:
+#    --skip-tests     Do not run the tests
+#    --skip-report    Do not print the coverage report to the terminal
+#    --verbose        Run the tests with verbose output
 #
 # This script can be run using `make test`.
 
 RUN_TESTS=true
 PRINT_COVERAGE_REPORT=true
+EXTRA_TEST_ARGUMENTS=
 
 # Process the arguments
 while [[ "$1" ]]; do
     case "$1" in
         --skip-tests) RUN_TESTS=false;;
         --skip-report) PRINT_COVERAGE_REPORT=false;;
+        --verbose) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS --verbose";;
         *) echo "Unknown argument: $1"; exit -1;;
     esac
     shift
@@ -30,7 +33,7 @@ echo
 
 # Run the tests
 if ( $RUN_TESTS ); then
-    hatch run test:run-tests ; TEST_EXIT_STATUS=$?
+    hatch run test:run-tests $EXTRA_TEST_ARGUMENTS ; TEST_EXIT_STATUS=$?
     echo
     hatch run test:generate-html-coverage-report --fail-under 0
     echo
