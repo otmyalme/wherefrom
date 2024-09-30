@@ -30,9 +30,11 @@ dependencies = [
 ]
 
 [tool.hatch.envs.test.scripts]
-test = "coverage run -m pytest {args}"
-html-report = "coverage html {args}"
-terminal-report = "coverage report {args}"
+# Don’t use these scripts directly; run `make test` instead.
+run-tests = "coverage run -m pytest {args}"
+generate-html-coverage-report = "coverage html {args}"
+print-coverage-report = "coverage report {args}"
+print-coverage-percentage = "coverage report --fail-under 0 --format total"
 
 [tool.pytest.ini_options]
 addopts = "--no-header"
