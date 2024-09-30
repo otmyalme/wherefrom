@@ -60,3 +60,25 @@ run = "echo 'Not yet configured; use “hatch run test:test” for now'"
 run-cov = "run"
 cov-combine = ""
 cov-report = ""
+
+
+# TYPE-CHECKING ##########################################################################
+
+[tool.hatch.envs.type-check]
+description = "Run the type checker"
+detached = true
+dependencies = [
+    "mypy",
+]
+
+[tool.hatch.envs.type-check.scripts]
+# Don’t use this script directly; run `make types` instead.
+run-type-checks = "mypy {args}"
+
+[tool.mypy]
+files = ["source", "tests"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = "no-untyped-def"  # Don’t insist on the `-> None` thing in test files

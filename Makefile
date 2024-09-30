@@ -1,3 +1,6 @@
+SCRIPTS = "scripts"
+
+
 # BUILD ##################################################################################
 
 .PHONY: build
@@ -10,17 +13,23 @@ build:
 
 .PHONY: test tests
 
-test:
-	@ ./scripts/run-tests.sh || true
+test tests:
+	@ ./$(SCRIPTS)/run-tests.sh || true
 
-tests: test
+
+# TYPE-CHECK #############################################################################
+
+.PHONY: type types
+
+type types:
+	@ ./$(SCRIPTS)/run-type-checker.sh || true
 
 
 # CLEAN ##################################################################################
 
 .PHONY: clean-all
 
-clean-all: clean-build-artifacts clean-test-files
+clean-all: clean-build-artifacts clean-test-files clean-type-checking-cache
 
 
 # BUILD
@@ -45,3 +54,11 @@ clean-coverage-data:
 
 clean-html-coverage-report:
 	@ rm -rf coverage
+
+
+# TYPE CHECKS
+
+.PHONY: clean-type-checking-cache
+
+clean-type-checking-cache:
+	@ rm -rf .mypy_cache
