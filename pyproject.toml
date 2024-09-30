@@ -82,3 +82,53 @@ strict = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disable_error_code = "no-untyped-def"  # Don’t insist on the `-> None` thing in test files
+
+
+# LINTING ################################################################################
+
+[tool.hatch.envs.lint]
+description = "Run the linter"
+detached = true
+dependencies = [
+    "ruff",
+]
+
+[tool.hatch.envs.lint.scripts]
+# Don’t use this script directly; run `make lint` instead.
+run-linter = ["ruff check {args}"]
+
+[tool.ruff]
+src = ["source", "tests"]
+line-length = 90
+
+[tool.ruff.lint]
+select = ["ALL"]
+preview = true
+ignore = [
+    "ANN",  # Missing type annotations; that’s mypy’s job
+    "CPY",  # Missing copyright notices; the project doesn’t currently use any
+    "D",    # Missing docstrings; enable that when there’s actually something to document
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",  # Allow assert statements in tests
+]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+# Don’t use Hatch’s build-in formatting and linting setup. The application uses its own
+# linting environment to avoid the risk of unexpected behavior due to Hatch’s defaults,
+# and it doesn’t use a code formatter.
+#
+# Code formatters are useful to ensure an uniform code style for projects that involve
+# multiple developers, but this project is being written by a single developer. Also,
+# existing formatters aren’t able to detect cases where deviating from their preferred
+# style would actually improve the code’s readability, and they have a number quirks that
+# lead to suboptimal formatting in some cases (the insistence on two empty lines after
+# comments that subdivide a file into logical sections, like the ones used in this file,
+# being one example). As a result, they would, in balance, probably worsen the formatting
+# of this project’s code rather than improve it.
+format-check = "echo 'Not configured; use “make lint” instead'"
+format-fix = "format-check"
+lint-check = "format-check"
+lint-fix = "format-check"

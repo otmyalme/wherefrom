@@ -25,11 +25,20 @@ type types:
 	@ ./$(SCRIPTS)/run-type-checker.sh || true
 
 
+# LINT ###################################################################################
+
+.PHONY: lint
+
+lint:
+	@ ./$(SCRIPTS)/run-linter.sh || true
+
+
 # CLEAN ##################################################################################
 
 .PHONY: clean-all
 
-clean-all: clean-build-artifacts clean-test-files clean-type-checking-cache
+clean-all: clean-build-artifacts clean-test-files clean-type-checking-cache \
+           clean-linter-cache
 
 
 # BUILD
@@ -62,3 +71,11 @@ clean-html-coverage-report:
 
 clean-type-checking-cache:
 	@ rm -rf .mypy_cache
+
+
+# LINTER
+
+.PHONY: clean-linter-cache
+
+ clean-linter-cache:
+	@ rm -rf .ruff_cache
