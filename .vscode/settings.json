@@ -2,9 +2,22 @@
     "cSpell.enableFiletypes": [
         "toml",
     ],
+    "cSpell.words": [
+        "addopts",
+        "pytest"
+    ],
     "editor.rulers": [
         90
     ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        ".pytest_cache": true,
+        "coverage": true,
+        ".coverage": true
+    },
     "files.trimFinalNewlines": true,
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "python.analysis.extraPaths": [
+        "./source"
+    ]
 }
