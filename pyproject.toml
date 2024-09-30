@@ -35,6 +35,7 @@ run-tests = "coverage run -m pytest {args}"
 generate-html-coverage-report = "coverage html {args}"
 print-coverage-report = "coverage report {args}"
 print-coverage-percentage = "coverage report --fail-under 0 --format total"
+erase-coverage-data = "coverage erase"
 
 [tool.pytest.ini_options]
 addopts = "--no-header"
