@@ -1,0 +1,10 @@
+{
+    "cSpell.enableFiletypes": [
+        "toml",
+    ],
+    "editor.rulers": [
+        90
+    ],
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true
+}
