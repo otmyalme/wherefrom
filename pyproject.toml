@@ -1,0 +1,20 @@
+# PROJECT ################################################################################
+
+[project]
+name = "wherefrom"
+version = "0.1.0"
+requires-python = ">= 3.12"
+dependencies = []
+
+
+# BUILDING ###############################################################################
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+directory = "artifacts"
+
+[tool.hatch.build.targets.wheel]
+packages = ["source/wherefrom"]
