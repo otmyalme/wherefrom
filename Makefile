@@ -9,6 +9,14 @@ build:
 	@ hatch build
 
 
+# CHECK ALL ##############################################################################
+
+.PHONY: check checks check-all
+
+check checks check-all:
+	@ ./$(SCRIPTS)/run-all-checks.sh || true
+
+
 # TEST ###################################################################################
 
 .PHONY: test tests

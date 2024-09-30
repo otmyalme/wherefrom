@@ -7,22 +7,47 @@
 # coverage report to the terminal (that would be annoying since it would force the
 # developer to scroll up to see the test failures).
 #
+# If this script is called with the arguments `--skip-report`, it will not print the
+# coverage report to the terminal; if it is called with the argument `--skip-tests`,
+# it doesn’t run the tests.
+#
 # This script can be run using `make test`.
 
+RUN_TESTS=true
+PRINT_COVERAGE_REPORT=true
+
+# Process the arguments
+while [[ "$1" ]]; do
+    case "$1" in
+        --skip-tests) RUN_TESTS=false;;
+        --skip-report) PRINT_COVERAGE_REPORT=false;;
+        *) echo "Unknown argument: $1"; exit -1;;
+    esac
+    shift
+done
+
 echo
-hatch run test:run-tests ; TEST_EXIT_STATUS=$?
-echo
-hatch run test:generate-html-coverage-report --fail-under 0
-echo
-if [[ $TEST_EXIT_STATUS -ne 0 ]]; then
-    exit $TEST_EXIT_STATUS
-fi
-hatch run test:print-coverage-report --fail-under 0
-echo
-hatch run test:print-coverage-report > /dev/null ; COVERAGE_REPORT_EXIT_STATUS=$?
-if [[ $COVERAGE_REPORT_EXIT_STATUS -eq 2 ]]; then
-    COVERAGE_PERCENTAGE="$(hatch run test:print-coverage-percentage)"
-    echo "\033[31;1mInsufficient test coverage: $COVERAGE_PERCENTAGE%\033[0m"
+
+# Run the tests
+if ( $RUN_TESTS ); then
+    hatch run test:run-tests ; TEST_EXIT_STATUS=$?
     echo
+    hatch run test:generate-html-coverage-report --fail-under 0
+    echo
+    if [[ $TEST_EXIT_STATUS -ne 0 ]]; then
+        exit $TEST_EXIT_STATUS
+    fi
 fi
-exit $COVERAGE_REPORT_EXIT_STATUS
+
+# Print the coverage report
+if ( $PRINT_COVERAGE_REPORT ); then
+    hatch run test:print-coverage-report --fail-under 0
+    echo
+    hatch run test:print-coverage-report > /dev/null; COVERAGE_REPORT_EXIT_STATUS=$?
+    if [[ $COVERAGE_REPORT_EXIT_STATUS -eq 2 ]]; then
+        COVERAGE_PERCENTAGE="$(hatch run test:print-coverage-percentage)"
+        echo "\033[31;1mInsufficient test coverage: $COVERAGE_PERCENTAGE%\033[0m"
+        echo
+    fi
+    exit $COVERAGE_REPORT_EXIT_STATUS
+fi
