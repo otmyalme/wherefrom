@@ -1,7 +1,7 @@
 # Run the linter.
 #
 # The script accepts the following arguments:
-#     --fix    Automatically fix linter issues
+#     --fix    Automatically fix linter issues, if possible
 #
 # This script can be run using `c l`, or `c f` to run it with `--fix`.
 

@@ -11,9 +11,9 @@
 #     --skip-linter             Do not run the linter
 #     --skip-coverage-report    Do not print the coverage report to the terminal
 #     --verbose-tests           Run the tests with verbose output
-#     --fix-linter-issues       Automatically fix linter issues
+#     --fix-linter-issues       Automatically fix linter issues, if possible
 #
-# This script can be run using `c`. See that script’s documentation for an explanation
+# The script can be run using `c`. See that script’s documentation for an explanation
 # as to how to specify the optional arguments.
 
 set -e

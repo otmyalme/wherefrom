@@ -13,6 +13,7 @@
 #     --verbose        Run the tests with verbose output
 #
 # This script can be run using `c tr`, or `c vr` to run it with `--verbose`.
+# `c t` only runs the tests, and `c r` only prints the coverage report.
 
 RUN_TESTS=true
 PRINT_COVERAGE_REPORT=true

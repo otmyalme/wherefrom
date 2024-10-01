@@ -6,11 +6,11 @@
 # If any of these steps finds any issues, all remaining steps are skipped.
 #
 # If called with an argument, the characters it contains control which steps are run:
-#   t, y, l, c    Run the tests, the type checker, the linter, or the coverage report,
-#                 respectively, but skip all other steps unless specified
-#   T, Y, L, C    Slip the tests, the type checker, the linter, or the coverage report
-#       v         Run the test, in verbose mode
-#       f         Run the linter and automatically
+#     t, y, l, c    Run the tests, the type checker, the linter, or the coverage report,
+#                   respectively, but skip all other steps unless specified
+#     T, Y, L, C    Slip the tests, the type checker, the linter, or the coverage report
+#         v         Run the test, in verbose mode
+#         f         Run the linter and automatically fix the issues it finds, if possible
 #
 # “r” and “R” are synonyms of “c” and “C”.
 #
