@@ -13,6 +13,7 @@
         "libc",
         "mypy",
         "pytest",
+        "typeshed",
         "xattr"
     ],
     "editor.rulers": [

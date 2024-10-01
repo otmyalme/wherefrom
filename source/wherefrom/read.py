@@ -8,6 +8,7 @@ by `man getxattr`.
 
 import ctypes
 import ctypes.util
+from datetime import datetime
 from pathlib import Path
 import plistlib
 
@@ -21,6 +22,14 @@ WHERE_FROM_ATTRIBUTE_NAME_BYTES = WHERE_FROM_ATTRIBUTE_NAME.encode("ascii")
 # The name of the C library that provides the necessary functionality for reading the
 # “where from“ attribute.
 LIBRARY_NAME = "libc"
+
+# The type of all possible “where from” values. `typeshed` annotates the return value of
+# the standard library function used to parse the binary values as `Any`, but reading the
+# source code and some experimentation resulted in the following type.
+#
+# In practice, values will usually be of type `list[str]`, however.
+type WhereFromValue = (str | bytes | bytearray | int | float | bool | datetime |
+    plistlib.UID | None | list["WhereFromValue"] | dict[str, "WhereFromValue"])
 
 
 class WhereFromAttributeReader:
@@ -38,7 +47,7 @@ class WhereFromAttributeReader:
         self.library = ctypes.CDLL(ctypes.util.find_library(LIBRARY_NAME), use_errno=True)
 
 
-    def read_where_from_value(self, path: Path) -> object:
+    def read_where_from_value(self, path: Path) -> WhereFromValue:
         """
         Read the “where from” value of the given object and return it as a Python object.
 
@@ -94,9 +103,10 @@ class WhereFromAttributeReader:
             return result  # type: ignore [no-any-return]  # `getxattr()` does return int
 
 
-    def _parse_binary_where_from_value(self, binary_value: bytes) -> object:
+    def _parse_binary_where_from_value(self, binary_value: bytes) -> WhereFromValue:
         """Convert the given binary “where from” value into a Python object."""
-        return plistlib.loads(binary_value, fmt=plistlib.FMT_BINARY)
+        value = plistlib.loads(binary_value, fmt=plistlib.FMT_BINARY)
+        return value  # type: ignore [no-any-return]  # I’ve read the source code
 
 
     def _get_reading_exception(self, path: bytes, error_code: int) -> Exception:
