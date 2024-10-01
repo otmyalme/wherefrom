@@ -12,7 +12,7 @@
 #     --skip-report    Do not print the coverage report to the terminal
 #     --verbose        Run the tests with verbose output
 #
-# This script can be run using `make test`.
+# This script can be run using `c tr`, or `c vr` to run it with `--verbose`.
 
 RUN_TESTS=true
 PRINT_COVERAGE_REPORT=true

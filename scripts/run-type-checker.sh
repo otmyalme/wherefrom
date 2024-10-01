@@ -1,6 +1,6 @@
 # Run the type checks.
 #
-# This script can be run using `make types`.
+# This script can be run using `c y`.
 
 echo
 hatch run type-check:run-type-checks ; EXIT_STATUS=$?

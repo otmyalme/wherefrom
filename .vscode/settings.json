@@ -1,6 +1,5 @@
 {
     "cSpell.enableFiletypes": [
-        "makefile",
         "shellscript",
         "toml",
     ],
@@ -23,7 +22,6 @@
     },
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
-    "makefile.configureOnOpen": false,
     "terminal.integrated.env.osx": {
         "PATH": "${env:PATH}:scripts/",
     },

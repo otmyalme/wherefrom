@@ -13,7 +13,8 @@
 #     --verbose-tests           Run the tests with verbose output
 #     --fix-linter-issues       Automatically fix linter issues
 #
-# This script can be run using `make checks`.
+# This script can be run using `c`. See that script’s documentation for an explanation
+# as to how to specify the optional arguments.
 
 set -e
 

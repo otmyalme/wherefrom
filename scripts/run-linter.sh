@@ -3,7 +3,7 @@
 # The script accepts the following arguments:
 #     --fix    Automatically fix linter issues
 #
-# This script can be run using `make lint`.
+# This script can be run using `c l`, or `c f` to run it with `--fix`.
 
 EXTRA_ARGUMENTS=
 

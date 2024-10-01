@@ -1,6 +1,5 @@
 {
     "recommendations": [
-        "ms-vscode.makefile-tools",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "streetsidesoftware.code-spell-checker",
