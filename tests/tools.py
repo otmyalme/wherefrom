@@ -1,4 +1,6 @@
-"""Provide assorted utility functions that are useful for the test suite."""
+"""
+Provide assorted utility functions that are useful for the test suite.
+"""
 
 from pathlib import Path
 

@@ -1,4 +1,6 @@
-"""Provide test fixtures for use by the test suite."""
+"""
+Provide test fixtures for use by the test suite.
+"""
 
 from pathlib import Path
 

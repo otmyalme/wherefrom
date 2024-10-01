@@ -1,1 +1,3 @@
-"""The application’s test suite."""
+"""
+The application’s test suite.
+"""

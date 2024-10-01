@@ -122,6 +122,7 @@ ignore = [
     "ANN",      # Missing type annotations; that’s mypy’s job
     "CPY",      # Missing copyright notices; the project doesn’t currently use any
     "D107",     # Missing docstring in `__init__()` function; may be redundant
+    "D200",     # Docstring that would fit into one line; not wanted for module docstrings
     "D203",     # No empty line before class docstrings; that’s not the project’s style
     "D204",     # No empty line after class docstring; that’s sometimes okay
     "D205",     # No empty line after first docstring line; long summaries may be good
@@ -129,8 +130,10 @@ ignore = [
     "DOC",      # Missing docstring items; the project doesn’t use that docstring format
     "E303",     # Too many empty lines; the project uses extra lines between methods
     "I",        # Unsorted imports; the linter’s sort order is often nonsensical
+    "N818",     # Exception classes without an “Error” suffix; Not the project’s style
     "PLR6301",  # Methods that don’t use `self`; that’s sometimes good code organization
     "RET504",   # Allow unnecessary assignment of returned variables; sometimes good
+    "RET506",   # Allow unnecessary else after return; that makes the logic easier to read
     "TD",       # Invalid TODO tags; TODOs are already forbidden by FIX
 ]
 allowed-confusables = [
