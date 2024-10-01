@@ -119,18 +119,19 @@ line-length = 90
 select = ["ALL"]
 preview = true
 ignore = [
-    "ANN",     # Missing type annotations; that’s mypy’s job
-    "CPY",     # Missing copyright notices; the project doesn’t currently use any
-    "D107",    # Missing docstring in `__init__()` function; may be redundant
-    "D203",    # No empty line before class docstrings; that’s not the project’s style
-    "D204",    # No empty line after class docstring; that’s sometimes okay
-    "D205",    # No empty line after first docstring line; long summaries may be good
-    "D212",    # Docstring starts on a new line; the project prefers to do it that way
-    "DOC",     # Missing docstring items; the project doesn’t use that docstring format
-    "E303",    # Too many empty lines; the project uses extra lines between methods
-    "I",       # Unsorted imports; the linter’s sort order is often nonsensical
-    "RET504",  # Allow unnecessary assignment of returned variables; sometimes good
-    "TD",      # Invalid TODO tags; TODOs are already forbidden by FIX
+    "ANN",      # Missing type annotations; that’s mypy’s job
+    "CPY",      # Missing copyright notices; the project doesn’t currently use any
+    "D107",     # Missing docstring in `__init__()` function; may be redundant
+    "D203",     # No empty line before class docstrings; that’s not the project’s style
+    "D204",     # No empty line after class docstring; that’s sometimes okay
+    "D205",     # No empty line after first docstring line; long summaries may be good
+    "D212",     # Docstring starts on a new line; the project prefers to do it that way
+    "DOC",      # Missing docstring items; the project doesn’t use that docstring format
+    "E303",     # Too many empty lines; the project uses extra lines between methods
+    "I",        # Unsorted imports; the linter’s sort order is often nonsensical
+    "PLR6301",  # Methods that don’t use `self`; that’s sometimes good code organization
+    "RET504",   # Allow unnecessary assignment of returned variables; sometimes good
+    "TD",       # Invalid TODO tags; TODOs are already forbidden by FIX
 ]
 allowed-confusables = [
     "’",  # U+2019 RIGHT SINGLE QUOTATION MARK

@@ -8,6 +8,8 @@ by `man getxattr`.
 
 import ctypes
 import ctypes.util
+from pathlib import Path
+import plistlib
 
 
 # The full name of the “where from” attribute, as a string and a bytes object.
@@ -34,19 +36,33 @@ class WhereFromAttributeReader:
         self.library = ctypes.CDLL(ctypes.util.find_library(LIBRARY_NAME))
 
 
-    def _read_where_from_attribute_length(self, path: bytes) -> int:
+    def read_where_from_value(self, path: Path) -> object:
+        """
+        Read the “where from” value of the given object and return it as a Python object.
+
+        The returned value is most likely a list of strings, but values of other types
+        can be returned if the file’s “where from” attribute has been set in an unusual
+        manner. Checking for these cases is the responsibility of the caller.
+        """
+        bytes_path = bytes(path)
+        attribute_length = self._read_where_from_value_length(bytes_path)
+        binary_value = self._read_where_from_value(bytes_path, attribute_length)
+        return self._parse_binary_where_from_value(binary_value)
+
+
+    def _read_where_from_value_length(self, path: bytes) -> int:
         """
         Read the length of the “where from” attribute in bytes. This is required to call
-        `_read_where_from_attribute()`.
+        `_read_where_from_value()`.
         """
         return self._call_getxattr(path)
 
 
-    def _read_where_from_attribute(self, path: bytes, length: int) -> bytes:
+    def _read_where_from_value(self, path: bytes, length: int) -> bytes:
         """
         Read the value of the “where from” attribute of the given file. `length` is the
         length of the attribute’s value in bytes, which should be obtained by calling
-        `_read_where_from_attribute_length()`.
+        `_read_where_from_value_length()`.
         """
         buffer = ctypes.create_string_buffer(length)
         self._call_getxattr(path, buffer)
@@ -71,6 +87,11 @@ class WhereFromAttributeReader:
             0,  # options; can be used to avoid following symbolic links
         )
         return result  # type: ignore [no-any-return]  # `getxattr()` does return int
+
+
+    def _parse_binary_where_from_value(self, binary_value: bytes) -> object:
+        """Convert the given binary “where from” value into a Python object."""
+        return plistlib.loads(binary_value, fmt=plistlib.FMT_BINARY)
 
 
 # The type of the C string buffer passed to `_call_getxattr()`.
