@@ -6,12 +6,12 @@
 # discovered the issue.
 #
 # The script accepts the following arguments:
-#    --skip-tests              Do not run the tests
-#    --skip-type-checks        Do not run the type checks
-#    --skip-linter             Do not run the linter
-#    --skip-coverage-report    Do not print the coverage report to the terminal
-#    --verbose-tests           Run the tests with verbose output
-#    --fix-linter-issues       Automatically fix linter issues
+#     --skip-tests              Do not run the tests
+#     --skip-type-checks        Do not run the type checks
+#     --skip-linter             Do not run the linter
+#     --skip-coverage-report    Do not print the coverage report to the terminal
+#     --verbose-tests           Run the tests with verbose output
+#     --fix-linter-issues       Automatically fix linter issues
 #
 # This script can be run using `make checks`.
 
@@ -25,10 +25,10 @@ EXTRA_LINTER_ARGUMENTS=
 PRINT_COVERAGE_REPORT=true
 
 # Process the arguments
-while [[ "$1" ]]; do
+while [ "$1" ]; do
     case "$1" in
         --skip-tests) RUN_TESTS=false;;
-        --skip-type-checks) RUN_TYPE_CHECKER=false;;
+        --skip-type-checker) RUN_TYPE_CHECKER=false;;
         --skip-linter) RUN_LINTER=false;;
         --skip-coverage-report) PRINT_COVERAGE_REPORT=false;;
         --verbose-tests) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS --verbose";;

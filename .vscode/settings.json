@@ -24,6 +24,9 @@
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
     "makefile.configureOnOpen": false,
+    "terminal.integrated.env.osx": {
+        "PATH": "${env:PATH}:scripts/",
+    },
     "python.analysis.extraPaths": [
         "./source"
     ]

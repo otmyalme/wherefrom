@@ -8,9 +8,9 @@
 # developer to scroll up to see the test failures).
 #
 # The script accepts the following arguments:
-#    --skip-tests     Do not run the tests
-#    --skip-report    Do not print the coverage report to the terminal
-#    --verbose        Run the tests with verbose output
+#     --skip-tests     Do not run the tests
+#     --skip-report    Do not print the coverage report to the terminal
+#     --verbose        Run the tests with verbose output
 #
 # This script can be run using `make test`.
 
@@ -19,7 +19,7 @@ PRINT_COVERAGE_REPORT=true
 EXTRA_TEST_ARGUMENTS=
 
 # Process the arguments
-while [[ "$1" ]]; do
+while [ "$1" ]; do
     case "$1" in
         --skip-tests) RUN_TESTS=false;;
         --skip-report) PRINT_COVERAGE_REPORT=false;;
@@ -37,7 +37,7 @@ if ( $RUN_TESTS ); then
     echo
     hatch run test:generate-html-coverage-report --fail-under 0
     echo
-    if [[ $TEST_EXIT_STATUS -ne 0 ]]; then
+    if [ $TEST_EXIT_STATUS -ne 0 ]; then
         exit $TEST_EXIT_STATUS
     fi
 fi
@@ -47,7 +47,7 @@ if ( $PRINT_COVERAGE_REPORT ); then
     hatch run test:print-coverage-report --fail-under 0
     echo
     hatch run test:print-coverage-report > /dev/null; COVERAGE_REPORT_EXIT_STATUS=$?
-    if [[ $COVERAGE_REPORT_EXIT_STATUS -eq 2 ]]; then
+    if [ $COVERAGE_REPORT_EXIT_STATUS -eq 2 ]; then
         COVERAGE_PERCENTAGE="$(hatch run test:print-coverage-percentage)"
         echo "\033[31;1mInsufficient test coverage: $COVERAGE_PERCENTAGE%\033[0m"
         echo

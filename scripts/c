@@ -1,0 +1,69 @@
+# Check the code.
+#
+# If called without an argument, runs the unit tests, the type checker, and the linter,
+# and then prints the test coverage report.
+#
+# If any of these steps finds any issues, all remaining steps are skipped.
+#
+# If called with an argument, the characters it contains control which steps are run:
+#   t, y, l, c    Run the tests, the type checker, the linter, or the coverage report,
+#                 respectively, but skip all other steps unless specified
+#   T, Y, L, C    Slip the tests, the type checker, the linter, or the coverage report
+#       v         Run the test, in verbose mode
+#       f         Run the linter and automatically
+#
+# “r” and “R” are synonyms of “c” and “C”.
+#
+# Examples:
+#     t     Run the tests, but not the other steps
+#     tr    Run the test and the test coverage report, but not the other steps
+#     v     Run the tests in verbose mode, and run all other steps
+#     tv    Run the tests in verbose mode, but not the other steps
+#
+# The steps are run in the default order, regardless of the order in which the characters
+# appear in the argument, and if any issues are found in one step, the remaining steps
+# are still skipped.
+#
+# VS Code adds the `scripts` directory to `PATH`, so this script can be executed as `c`.
+
+RUN_ALL=true
+RUN_TESTS=default
+RUN_TYPE_CHECKER=default
+RUN_LINTER=default
+PRINT_COVERAGE_REPORT=default
+EXTRA_ARGUMENTS=
+
+COMMAND=$1
+
+for (( i=0; i<${#COMMAND}; i++ )); do
+    c="${COMMAND:$i:1}"
+    case $c in
+        t) RUN_ALL=false; RUN_TESTS=true;;
+        y) RUN_ALL=false; RUN_TYPE_CHECKER=true;;
+        l) RUN_ALL=false; RUN_LINTER=true;;
+        c|r) RUN_ALL=false; PRINT_COVERAGE_REPORT=true;;
+        T) RUN_TESTS=false;;
+        Y) RUN_TYPE_CHECKER=false;;
+        L) RUN_LINTER=false;;
+        C|R) PRINT_COVERAGE_REPORT=false;;
+        v) RUN_TESTS=true; EXTRA_ARGUMENTS="$EXTRA_ARGUMENTS --verbose-tests";;
+        f) RUN_LINTER=true; EXTRA_ARGUMENTS="$EXTRA_ARGUMENTS --fix-linter-issues";;
+        *) echo "Unknown character: $c"; exit -1;;
+    esac
+done
+
+[ "$RUN_TESTS" == "default" ] && RUN_TESTS=$RUN_ALL
+[ "$RUN_TYPE_CHECKER" == "default" ] && RUN_TYPE_CHECKER=$RUN_ALL
+[ "$RUN_LINTER" == "default" ] && RUN_LINTER=$RUN_ALL
+[ "$PRINT_COVERAGE_REPORT" == "default" ] && PRINT_COVERAGE_REPORT=$RUN_ALL
+
+ARGUMENTS=
+
+! $RUN_TESTS && ARGUMENTS="$ARGUMENTS --skip-tests"
+! $RUN_TYPE_CHECKER && ARGUMENTS="$ARGUMENTS --skip-type-checker"
+! $RUN_LINTER && ARGUMENTS="$ARGUMENTS --skip-linter"
+! $PRINT_COVERAGE_REPORT && ARGUMENTS="$ARGUMENTS --skip-coverage-report"
+
+ARGUMENTS="$ARGUMENTS $EXTRA_ARGUMENTS"
+
+./scripts/run-all-checks.sh $ARGUMENTS

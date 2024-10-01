@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.test.scripts]
-# Don’t use these scripts directly; run `make test` instead.
+# Don’t use these scripts directly; run `c tr` instead.
 run-tests = "coverage run -m pytest {args}"
 generate-html-coverage-report = "coverage html {args}"
 print-coverage-report = "coverage report {args}"
@@ -72,7 +72,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.type-check.scripts]
-# Don’t use this script directly; run `make types` instead.
+# Don’t use this script directly; run `c y` instead.
 run-type-checks = "mypy {args}"
 
 [tool.mypy]
@@ -94,7 +94,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.lint.scripts]
-# Don’t use this script directly; run `make lint` instead.
+# Don’t use this script directly; run `c l` instead.
 run-linter = ["ruff check {args}"]
 
 [tool.ruff]
@@ -128,7 +128,7 @@ ignore = [
 # comments that subdivide a file into logical sections, like the ones used in this file,
 # being one example). As a result, they would, in balance, probably worsen the formatting
 # of this project’s code rather than improve it.
-format-check = "echo 'Not configured; use “make lint” instead'"
+format-check = "echo 'Not configured; use “c l” instead'"
 format-fix = "format-check"
 lint-check = "format-check"
 lint-fix = "format-check"
