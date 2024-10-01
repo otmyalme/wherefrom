@@ -91,6 +91,7 @@ run-type-checks = "mypy {args}"
 [tool.mypy]
 files = ["source", "tests"]
 strict = true
+enable_incomplete_feature = ["NewGenericSyntax"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -118,14 +119,18 @@ line-length = 90
 select = ["ALL"]
 preview = true
 ignore = [
-    "ANN",   # Missing type annotations; that’s mypy’s job
-    "CPY",   # Missing copyright notices; the project doesn’t currently use any
-  # "D",     # Missing docstrings; enable that when there’s actually something to document
-    "D203",  # No blank line before class docstrings; that’s not the project’s style
-    "D205",  # No blank line after first docstring line; sometimes long summaries are good
-    "D212",  # Docstring starts on a new line; the project prefers to do it that way
-    "DOC",   # Missing docstring items; the project doesn’t use that docstring format
-    "I",     # Unsorted imports; the linter’s sort order is often nonsensical
+    "ANN",     # Missing type annotations; that’s mypy’s job
+    "CPY",     # Missing copyright notices; the project doesn’t currently use any
+    "D107",    # Missing docstring in `__init__()` function; may be redundant
+    "D203",    # No empty line before class docstrings; that’s not the project’s style
+    "D204",    # No empty line after class docstring; that’s sometimes okay
+    "D205",    # No empty line after first docstring line; long summaries may be good
+    "D212",    # Docstring starts on a new line; the project prefers to do it that way
+    "DOC",     # Missing docstring items; the project doesn’t use that docstring format
+    "E303",    # Too many empty lines; the project uses extra lines between methods
+    "I",       # Unsorted imports; the linter’s sort order is often nonsensical
+    "RET504",  # Allow unnecessary assignment of returned variables; sometimes good
+    "TD",      # Invalid TODO tags; TODOs are already forbidden by FIX
 ]
 allowed-confusables = [
     "’",  # U+2019 RIGHT SINGLE QUOTATION MARK
@@ -133,10 +138,12 @@ allowed-confusables = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "D400",  # Allow the first docstring line to end with a question mark in test files
-    "S101",  # Allow assert statements in tests
-    "S404",  # Allow use of the `subprocess` module
-    "S603",  # Don’t be suspicious of `subprocess.run` calls just in case
+    "D400",     # Allow the first docstring line to end with a question mark in test files
+    "PLR2004",  # Allow magic values in tests
+    "S101",     # Allow assert statements in tests
+    "S404",     # Allow use of the `subprocess` module
+    "S603",     # Don’t be suspicious of `subprocess.run` calls just in case
+    "SLF001",   # Allow private member access in tests
 ]
 
 

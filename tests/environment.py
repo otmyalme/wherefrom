@@ -18,9 +18,7 @@ from pathlib import Path
 import plistlib
 import subprocess
 
-
-# The full name of the extended file attribute holding the “where from” data.
-WHERE_FROM_ATTRIBUTE_NAME = "com.apple.metadata:kMDItemWhereFroms"
+from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME
 
 
 # CREATE #################################################################################

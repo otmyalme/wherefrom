@@ -8,6 +8,8 @@
         "confusables",
         "docstrings",
         "froms",
+        "getxattr",
+        "libc",
         "mypy",
         "pytest",
         "xattr"
