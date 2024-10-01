@@ -1,0 +1,31 @@
+{
+    "cSpell.enableFiletypes": [
+        "shellscript",
+        "toml",
+    ],
+    "cSpell.words": [
+        "addopts",
+        "docstrings",
+        "mypy",
+        "pytest"
+    ],
+    "editor.rulers": [
+        90
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        ".mypy_cache": true,
+        ".pytest_cache": true,
+        ".ruff_cache": true,
+        "coverage": true,
+        ".coverage": true
+    },
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "terminal.integrated.env.osx": {
+        "PATH": "${env:PATH}:scripts/",
+    },
+    "python.analysis.extraPaths": [
+        "./source"
+    ]
+}
