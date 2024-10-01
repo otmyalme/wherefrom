@@ -7,6 +7,7 @@
         "addopts",
         "confusables",
         "docstrings",
+        "ENOATTR",
         "ENOENT",
         "froms",
         "getxattr",

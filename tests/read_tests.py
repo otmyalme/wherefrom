@@ -8,7 +8,7 @@ from plistlib import UID
 
 import pytest
 
-from wherefrom.read import NoSuchFile, WhereFromAttributeReader
+from wherefrom.read import WhereFromAttributeReader, FileHasNoWhereFromValue, NoSuchFile
 
 
 # READING THE VALUE ######################################################################
@@ -59,14 +59,24 @@ def test_get_where_from_value__weird_types(environment, file_name, expected):
 
 # Errors ---------------------------------------------------------------------------------
 
-def test_read_where_from_value__no_such_file(environment: Path):
-    """Does the method raise an appropriate exception if the file doesn’t exist?"""
-    path = environment / "errors" / "no-such-file.png"
-    with pytest.raises(NoSuchFile) as exception_information:
+ERROR_TESTS = [
+    ("no-value.png", FileHasNoWhereFromValue, "The file doesn’t have the value set"),
+    ("no-such-file.png", NoSuchFile, "The file doesn’t exist"),
+]
+
+
+@pytest.mark.parametrize(("file_name", "exception", "message_tail"), ERROR_TESTS)
+def test_read_where_from_value__errors(
+    environment: Path,
+    file_name: str,
+    exception: type[Exception],
+    message_tail: str,
+):
+    """Does the function raise appropriate exceptions if something goes wrong?"""
+    path = environment / file_name
+    with pytest.raises(exception) as exception_information:
         WhereFromAttributeReader().read_where_from_value(path)
-    expected_message = (
-        f"Could not read the “were from” value of “{path}”: The file doesn’t exist"
-    )
+    expected_message = f"Could not read the “were from” value of “{path}”: {message_tail}"
     assert str(exception_information.value) == expected_message
 
 

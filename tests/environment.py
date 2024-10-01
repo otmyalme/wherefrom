@@ -18,8 +18,11 @@ from datetime import datetime
 from pathlib import Path
 import plistlib
 import subprocess
+from typing import Literal
 
 from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME, WhereFromValue
+
+from tests.tools import Sentinel
 
 
 # CREATE #################################################################################
@@ -33,6 +36,9 @@ def create_test_environment(environment_path: Path) -> None:
     _create_file(simple, "one-item.html", ["http://nowhere.test/index.html"])
     _create_file(simple, "two-items.png",
         ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"])
+
+    # A file that doesn’t have a “where from” value
+    _create_file(environment_path, "no-value.png", Sentinel.NO_VALUE)
 
     # Files whose “where from” value is of an unusual type
     weird_types_path = _create_directory(environment_path, "weird-types")
@@ -56,7 +62,11 @@ def _create_directory(parent_path: Path, name: str) -> Path:
     return path
 
 
-def _create_file(parent_path: Path, name: str, where_from_value: WhereFromValue) -> Path:
+def _create_file(
+    parent_path: Path,
+    name: str,
+    where_from_value: WhereFromValue | Literal[Sentinel.NO_VALUE],
+) -> Path:
     """
     Create a file with the given name at the given path and return its path.
 
@@ -69,11 +79,15 @@ def _create_file(parent_path: Path, name: str, where_from_value: WhereFromValue)
     If `name` has any other extension, the file is touched.
     """
     path = parent_path / name
+
     if path.suffix == ".png":
         _create_png_file(path)
     else:
         path.touch()
-    _set_where_from_value(path, where_from_value)
+
+    if where_from_value is not Sentinel.NO_VALUE:
+        _set_where_from_value(path, where_from_value)
+
     return path
 
 

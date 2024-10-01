@@ -54,6 +54,11 @@ class WhereFromAttributeReader:
         The returned value is most likely a list of strings, but values of other types
         can be returned if the file’s “where from” attribute has been set in an unusual
         manner. Checking for these cases is the responsibility of the caller.
+
+        The function raises `ReadWhereFromValueError` (or a subclass thereof) if the value
+        cannot be read or cannot be parsed. This includes cases where the file simply
+        doesn’t have a “where from” value. In those cases, the `FileHasNoWhereFromValue`
+        subclass is raised.
         """
         bytes_path = bytes(path)
         attribute_length = self._read_where_from_value_length(bytes_path)
@@ -140,6 +145,12 @@ class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
     MESSAGE = "The file doesn’t exist"
 
 
+class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
+    """Raised when reading the “where from” value of a file that doesn’t have one."""
+    MESSAGE = "The file doesn’t have the value set"
+
+
+
 # A dict that maps error codes from `getxattr()` to their name and the appropriate
 # exception to throw.
 #
@@ -147,7 +158,9 @@ class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
 # the mapping of error codes to names.
 ERROR_INFORMATION = {
     # Undocumented codes that have been determined by experimentation
-    2: ("ENOENT", NoSuchFile),
+     2: ("ENOENT", NoSuchFile),
+    # Documented codes in the order they appear on the `getxattr` manpage
+    93: ("ENOATTR", FileHasNoWhereFromValue),
 }
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.
