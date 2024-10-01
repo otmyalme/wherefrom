@@ -14,11 +14,12 @@ The logic used to implement these safeguards is subject to race conditions, howe
 just manually create the files once and keep them in the repository.)
 """
 
+from datetime import datetime
 from pathlib import Path
 import plistlib
 import subprocess
 
-from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME
+from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME, WhereFromValue
 
 
 # CREATE #################################################################################
@@ -33,6 +34,20 @@ def create_test_environment(environment_path: Path) -> None:
     _create_file(simple, "two-items.png",
         ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"])
 
+    # Files whose “where from” value is of an unusual type
+    weird_types_path = _create_directory(environment_path, "weird-types")
+    _create_file(weird_types_path, "str.png", "This is a string")
+    _create_file(weird_types_path, "bytes.png", b"This is a bytes object")
+    _create_file(weird_types_path, "bytearray.png", bytearray.fromhex("e29d93"))
+    _create_file(weird_types_path, "int.png", 23)
+    _create_file(weird_types_path, "float.png", 23.5)
+    _create_file(weird_types_path, "bool.png", where_from_value=True)
+    _create_file(weird_types_path, "datetime.png", SAMPLE_DATETIME)
+    _create_file(weird_types_path, "uid.png", plistlib.UID(23))
+    _create_file(weird_types_path, "none.png", None)
+    _create_file(weird_types_path, "list.png", ["foo", 23, b"ar", [1, 2, 3]])
+    _create_file(weird_types_path, "dict.png", {"foo": 23, "bar": [1, 2, 3]})
+
 
 def _create_directory(parent_path: Path, name: str) -> Path:
     """Create a directory with the given name at the given path and return its path."""
@@ -41,7 +56,7 @@ def _create_directory(parent_path: Path, name: str) -> Path:
     return path
 
 
-def _create_file(parent_path: Path, name: str, where_from_value: list[str]) -> Path:
+def _create_file(parent_path: Path, name: str, where_from_value: WhereFromValue) -> Path:
     """
     Create a file with the given name at the given path and return its path.
 
@@ -68,9 +83,11 @@ def _create_png_file(path: Path) -> None:
         file.write(TINY_PNG_BYTES)
 
 
-def _set_where_from_value(path, value: list[str]) -> None:
+def _set_where_from_value(path, value: WhereFromValue) -> None:
     """Set the “where from” attribute of the file at the given path to the given value."""
-    hexadecimal_value = plistlib.dumps(value, fmt=plistlib.FMT_BINARY).hex()
+    fmt = plistlib.FMT_BINARY
+    binary_value = plistlib.dumps(value, fmt=fmt)  # type: ignore [arg-type]  # I’m sure
+    hexadecimal_value = binary_value.hex()
     # Use `xattr` to set the value rather than using `ctypes` in the tests, too.
     # “-wx” means “write a value that’s provided in hexadecimal”.
     command = ["xattr", "-wx", WHERE_FROM_ATTRIBUTE_NAME, hexadecimal_value, str(path)]
@@ -128,7 +145,7 @@ def _is_safe_to_delete(path: Path) -> bool:
     return is_file and (is_ds_store or is_empty or is_tiny_png)
 
 
-# FILE CONTENTS ##########################################################################
+# FILE CONTENTS AND SAMPLE VALUES ########################################################
 
 # A PNG file consisting of a single white pixel, encoded as a string of hexadecimal
 # digits. Used so that the PNGs created as test files are actually valid.
@@ -141,3 +158,7 @@ TINY_PNG_HEX = (
 
 # The same PNG as a bytes object.
 TINY_PNG_BYTES = bytes.fromhex(TINY_PNG_HEX)
+
+# A sample datetime object. This doesn’t have a time zone because it’s passed to
+# `plistlib.dumps`, which explodes if given datetimes with time zones.
+SAMPLE_DATETIME = datetime(2023, 5, 23, 23, 23, 23)  # noqa: DTZ001  # See above
