@@ -5,13 +5,19 @@
     ],
     "cSpell.words": [
         "addopts",
+        "confusables",
         "docstrings",
+        "froms",
         "mypy",
-        "pytest"
+        "pytest",
+        "xattr"
     ],
     "editor.rulers": [
         90
     ],
+    "editor.unicodeHighlight.allowedCharacters": {
+        "’": true
+    },
     "files.exclude": {
         "**/__pycache__": true,
         ".mypy_cache": true,
