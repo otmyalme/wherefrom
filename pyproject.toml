@@ -1,0 +1,134 @@
+# PROJECT ################################################################################
+
+[project]
+name = "wherefrom"
+version = "0.1.0"
+requires-python = ">= 3.12"
+dependencies = []
+
+
+# BUILDING ###############################################################################
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+directory = "artifacts"
+
+[tool.hatch.build.targets.wheel]
+packages = ["source/wherefrom"]
+
+
+# TESTING ################################################################################
+
+[tool.hatch.envs.test]
+description = "Run the unit tests"
+dependencies = [
+    "coverage",
+    "pytest",
+]
+
+[tool.hatch.envs.test.scripts]
+# Don’t use these scripts directly; run `c tr` instead.
+run-tests = "coverage run -m pytest {args}"
+generate-html-coverage-report = "coverage html {args}"
+print-coverage-report = "coverage report {args}"
+print-coverage-percentage = "coverage report --fail-under 0 --format total"
+erase-coverage-data = "coverage erase"
+
+[tool.pytest.ini_options]
+addopts = "--no-header"
+python_files = ["*_tests.py"]
+
+[tool.coverage.run]
+source = ["source", "tests"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+
+[tool.coverage.html]
+directory = "coverage"
+
+[tool.hatch.envs.hatch-test.scripts]
+# Don’t use Hatch’s build-in testing setup for now; that’s useful for testing against
+# a number of different Python versions prior to release, but is somewhat inflexible,
+# and during development, that inflexibility is annoying, and it’s sufficient to test
+# against a single Python version.
+run = "echo 'Not yet configured; use “hatch run test:test” for now'"
+run-cov = "run"
+cov-combine = ""
+cov-report = ""
+
+
+# TYPE-CHECKING ##########################################################################
+
+[tool.hatch.envs.type-check]
+description = "Run the type checker"
+detached = true
+dependencies = [
+    "mypy",
+]
+
+[tool.hatch.envs.type-check.scripts]
+# Don’t use this script directly; run `c y` instead.
+run-type-checks = "mypy {args}"
+
+[tool.mypy]
+files = ["source", "tests"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = "no-untyped-def"  # Don’t insist on the `-> None` thing in test files
+
+
+# LINTING ################################################################################
+
+[tool.hatch.envs.lint]
+description = "Run the linter"
+detached = true
+dependencies = [
+    "ruff",
+]
+
+[tool.hatch.envs.lint.scripts]
+# Don’t use this script directly; run `c l` instead.
+run-linter = ["ruff check {args}"]
+
+[tool.ruff]
+src = ["source", "tests"]
+line-length = 90
+
+[tool.ruff.lint]
+select = ["ALL"]
+preview = true
+ignore = [
+    "ANN",  # Missing type annotations; that’s mypy’s job
+    "CPY",  # Missing copyright notices; the project doesn’t currently use any
+    "D",    # Missing docstrings; enable that when there’s actually something to document
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",  # Allow assert statements in tests
+]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+# Don’t use Hatch’s build-in formatting and linting setup. The application uses its own
+# linting environment to avoid the risk of unexpected behavior due to Hatch’s defaults,
+# and it doesn’t use a code formatter.
+#
+# Code formatters are useful to ensure an uniform code style for projects that involve
+# multiple developers, but this project is being written by a single developer. Also,
+# existing formatters aren’t able to detect cases where deviating from their preferred
+# style would actually improve the code’s readability, and they have a number quirks that
+# lead to suboptimal formatting in some cases (the insistence on two empty lines after
+# comments that subdivide a file into logical sections, like the ones used in this file,
+# being one example). As a result, they would, in balance, probably worsen the formatting
+# of this project’s code rather than improve it.
+format-check = "echo 'Not configured; use “c l” instead'"
+format-fix = "format-check"
+lint-check = "format-check"
+lint-fix = "format-check"
