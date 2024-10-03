@@ -6,8 +6,9 @@ The exception hierarchy is structured as follows:
     WhereFromException
      └─ ReadWhereFromValueError
          └─ CannotReadWhereFromValue
-             ├─ NoSuchFile
              ├─ FileHasNoWhereFromValue
+             ├─ NoSuchFile
+             ├─ FileNotReadable
              ├─ UnsupportedFileSystem
              ├─ UnsupportedFileSystemObject
              ├─ UnsupportedFileName
@@ -75,6 +76,14 @@ class CannotReadWhereFromValue(ReadWhereFromValueError):
 
 # Common Errors --------------------------------------------------------------------------
 
+class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
+    """
+    Raised when reading the “where from” value of a file that doesn’t have one.
+    The corresponding `getxattr()` error name is `ENOATTR`.
+    """
+    MESSAGE = "The file doesn’t have the value set"
+
+
 class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
     """
     Raised when reading the “where from” value of a file that does not exist.
@@ -83,12 +92,12 @@ class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
     MESSAGE = "The file doesn’t exist"
 
 
-class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
+class FileNotReadable(CannotReadWhereFromValue, PermissionError):
     """
-    Raised when reading the “where from” value of a file that doesn’t have one.
-    The corresponding `getxattr()` error name is `ENOATTR`.
+    Raised when reading the “where from” value of a file that cannot be read.
+    The corresponding `getxattr()` error name is `EACCES`.
     """
-    MESSAGE = "The file doesn’t have the value set"
+    MESSAGE = "You don’t have permission to access the file"
 
 
 # Lack of Support ------------------------------------------------------------------------

@@ -51,6 +51,7 @@ erase-coverage-data = "coverage erase"
 
 [tool.pytest.ini_options]
 addopts = "--no-header"
+testpaths = ["tests"]
 python_files = ["*_tests.py"]
 
 [tool.coverage.run]

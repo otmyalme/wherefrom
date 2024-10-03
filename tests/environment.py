@@ -37,8 +37,13 @@ def create_test_environment(environment_path: Path) -> None:
     _create_file(simple, "two-items.png",
         ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"])
 
-    # A file that doesn’t have a “where from” value
-    _create_file(environment_path, "no-value.png", Sentinel.NO_VALUE)
+    # Files that cause errors when read
+    errors = _create_directory(environment_path, "errors")
+    _create_file(errors, "no-value.png", Sentinel.NO_VALUE)
+    _create_file(errors, "not-readable.html", ["http://nowhere.test/"]).chmod(0o200)
+    not_readable = _create_directory(errors, "not-readable")
+    _create_file(not_readable, "one-item.html", ["http://nowhere.test/"])
+    not_readable.chmod(0o200)
 
     # Files whose “where from” value is of an unusual type
     weird_types_path = _create_directory(environment_path, "weird-types")
@@ -143,6 +148,10 @@ def _delete_directory(path: Path) -> None:
 
 def _delete_item(path: Path) -> None:
     """Delete the file or directory at the given path, it it appears safe to do so."""
+    if path.stat().st_mode & 0o777 == 0o200:
+        # The test environment includes a directory that isn’t readable; make it readable
+        # so that it can be deleted.
+        path.chmod(0o700)
     if path.is_dir():
         _delete_directory(path)
     else:

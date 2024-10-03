@@ -6,17 +6,17 @@ from enum import Enum
 from pathlib import Path
 
 
-TESTS_DIRECTORY_NAME = "tests"
+MAIN_DIRECTORY_NAME = "wherefrom"
 TEMPORARY_DIRECTORY_NAME = "temporary"
 
 
 def get_developer_visible_temporary_directory() -> Path:
     """
-    Get the path to a temporary directory in the application’s `tests` directory. Create
-    it, if necessary. See the docstring of `tests.environment` as to why this is useful.
+    Get the path to a temporary directory in the application’s main directory. Create it,
+    if necessary. See the docstring of the `environment` fixture as to why this is useful.
     """
-    tests_path = Path(__file__).parent
-    assert tests_path.name == TESTS_DIRECTORY_NAME
+    tests_path = Path(__file__).parent.parent
+    assert tests_path.name == MAIN_DIRECTORY_NAME
     temporary_path = tests_path / TEMPORARY_DIRECTORY_NAME
     temporary_path.mkdir(exist_ok=True)
     return temporary_path

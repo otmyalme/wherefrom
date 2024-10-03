@@ -9,8 +9,9 @@ import pytest
 
 from wherefrom.read import WhereFromAttributeReader
 from wherefrom.errors import (
-    CannotReadWhereFromValue, NoSuchFile, FileHasNoWhereFromValue, UnsupportedFileSystem,
-    UnsupportedFileSystemObject, UnsupportedFileName, WhereFromValueLengthMismatch,
+    CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
+    UnsupportedFileSystem, UnsupportedFileSystemObject, UnsupportedFileName,
+    WhereFromValueLengthMismatch,
 )
 
 
@@ -24,11 +25,25 @@ ERROR_TEST_PARAMETERS = (
 )
 ERROR_TESTS = [
     (
-        "no-value.png", FileHasNoWhereFromValue, 93, "ENOATTR",
+        "errors/no-value.png", FileHasNoWhereFromValue, 93, "ENOATTR",
         "The file doesn’t have the value set",
     ),
-    ("no-such-file.png", NoSuchFile, 2, "ENOENT", "The file doesn’t exist"),
-    ("no-value.png/impossible.png", NoSuchFile, 20, "ENOTDIR", "The file doesn’t exist"),
+    (
+        "errors/no-such-file.png", NoSuchFile, 2, "ENOENT",
+        "The file doesn’t exist",
+    ),
+    (
+        "errors/no-value.png/impossible.png", NoSuchFile, 20, "ENOTDIR",
+        "The file doesn’t exist",
+    ),
+    (
+        "errors/not-readable.html", FileNotReadable, 13, "EACCES",
+        "You don’t have permission to access the file",
+    ),
+    (
+        "errors/not-readable/one-item.html", FileNotReadable, 13, "EACCES",
+        "You don’t have permission to access the file",
+    ),
     (
         f"l{'o' * 256}ng-name.png", UnsupportedFileName, 63, "ENAMETOOLONG",
         "The length of the file’s name or that of it’s path exceeds the system limits",

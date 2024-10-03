@@ -13,8 +13,9 @@ from pathlib import Path
 import plistlib
 
 from wherefrom.errors import (
-    CannotReadWhereFromValue, NoSuchFile, FileHasNoWhereFromValue, UnsupportedFileSystem,
-    UnsupportedFileSystemObject, UnsupportedFileName, WhereFromValueLengthMismatch,
+    CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
+    UnsupportedFileSystem, UnsupportedFileSystemObject, UnsupportedFileName,
+    WhereFromValueLengthMismatch,
 )
 
 
@@ -146,6 +147,7 @@ ERROR_INFORMATION = {
     21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
     20: ("ENOTDIR", NoSuchFile),
     63: ("ENAMETOOLONG", UnsupportedFileName),
+    13: ("EACCES", FileNotReadable),
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have

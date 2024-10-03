@@ -8,6 +8,7 @@
         "APFS",
         "confusables",
         "docstrings",
+        "EACCES",
         "EINVAL",
         "EISDIR",
         "ENAMETOOLONG",
@@ -22,6 +23,7 @@
         "libc",
         "mypy",
         "pytest",
+        "testpaths",
         "typeshed",
         "xattr"
     ],

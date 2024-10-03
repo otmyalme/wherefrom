@@ -22,9 +22,9 @@ def environment() -> Path:
     tests, that should be safe.
 
     Also, rather than being created somewhere in `$TMPDIR`; the files are created in
-    the application’s `tests` directory, in `tests/temporary/test-environment`, and they
-    aren’t deleted at the end of the test session. This may be useful if the developer
-    needs to manually inspect the files’ “where from” attributes using Finder or `xattr`.
+    the application’s main directory, in `temporary/test-environment`, and they aren’t
+    deleted at the end of the test session. This may be useful if the developer needs
+    to manually inspect the files’ “where from” attributes using Finder or `xattr`.
 
     The files are deleted and recreated at the start of each new test session, however,
     to ensure that they reflect any changes made to `create_test_environment()`.
