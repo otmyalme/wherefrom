@@ -12,7 +12,11 @@ from datetime import datetime
 from pathlib import Path
 import plistlib
 
-from wherefrom.error import WhereFromException
+from wherefrom.errors import (
+    CannotReadWhereFromValue,
+    NoSuchFile, FileHasNoWhereFromValue, UnsupportedFileSystem,
+    WhereFromValueLengthMismatch, UnsupportedFileSystemObject,
+)
 
 
 # The full name of the “where from” attribute, as a string and a bytes object.
@@ -122,68 +126,6 @@ class WhereFromAttributeReader:
         return exception_class(proper_path, error_code, error_name)
 
 
-# EXCEPTION CLASSES ######################################################################
-
-class ReadWhereFromValueError(WhereFromException):
-    """Raised if an error occurs while reading or parsing a file’s “where from” value."""
-    path: Path
-
-
-class CannotReadWhereFromValue(ReadWhereFromValueError):
-    """
-    Raised if an error occurs while reading a file’s “where from” value. For expected
-    errors, a subclass of this exception class is raised instead.
-    """
-    MESSAGE_PREFIX = "Could not read the “were from” value of “{path}”"
-    MESSAGE = "An unexpected error ocurred (error code {error_code})"
-    error_code: int
-    error_name: str
-
-
-class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
-    """Raised when reading the “where from” value of a file that does not exist."""
-    MESSAGE = "The file doesn’t exist"
-
-
-class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
-    """Raised when reading the “where from” value of a file that doesn’t have one."""
-    MESSAGE = "The file doesn’t have the value set"
-
-
-class FileSystemDoesNotSupportExtendedAttributes(CannotReadWhereFromValue):
-    """
-    Raised if the file system doesn’t support extended file attributes.
-
-    This hasn’t, so far, been tested on an actual file. Experiments involving FAT and
-    ExFAT disk images created by macOS and the internal memory of an ancient digital
-    camera found that all support extended file attributes.
-    """
-    MESSAGE = "The file system doesn’t support extended file attributes"
-
-
-class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
-    """
-    Raised if the buffer passed to `_read_where_from_value()` is too small to hold the
-    “where from” value. A different process may have changed the file’s “where from”
-    value in the time between the call to `_read_where_from_value_length()` and the call
-    to `_read_where_from_value_length()`, or there may be a bug in this application, or
-    in `getxattr()`.
-    """
-    MESSAGE = """
-        Either the value has changed while it was being read, or there has been an
-        unexpected internal error
-    """
-
-
-class UnsupportedFileSystemObject(CannotReadWhereFromValue):
-    """
-    Raised when reading the “where from” attribute of a file system object that doesn’t
-    support the “where from” attribute (or extended attributes in general, presumably).
-    `/dev/null` qualifies, but it’s not clear what the exact rules are.
-    """
-    MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
-
-
 # A dict that maps error codes from `getxattr()` to their name and the appropriate
 # exception to throw.
 #
@@ -194,7 +136,7 @@ ERROR_INFORMATION = {
      2: ("ENOENT", NoSuchFile),
     # Documented codes in the order they appear on the `getxattr` manpage
     93: ("ENOATTR", FileHasNoWhereFromValue),
-    45: ("ENOTSUP", FileSystemDoesNotSupportExtendedAttributes),
+    45: ("ENOTSUP", UnsupportedFileSystem),
     34: ("ERANGE", WhereFromValueLengthMismatch),
      1: ("EPERM", UnsupportedFileSystemObject),
 }

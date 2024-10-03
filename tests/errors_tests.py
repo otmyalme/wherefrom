@@ -1,10 +1,10 @@
 """
-Test the `wherefrom.error` module.
+Test the convenience features of the `WhereFromException` class.
 """
 
 from dataclasses import is_dataclass
 
-from wherefrom.error import WhereFromException
+from wherefrom.errors import WhereFromException
 
 
 # WHERE FROM EXCEPTION ###################################################################

@@ -1,5 +1,7 @@
 """
 Test the `wherefrom.read` module.
+
+Errors are tested by `tests.read_error_tests`, not by this module.
 """
 
 from datetime import datetime
@@ -8,16 +10,12 @@ from plistlib import UID
 
 import pytest
 
-from wherefrom.read import (
-    WhereFromAttributeReader,
-    NoSuchFile, FileHasNoWhereFromValue, FileSystemDoesNotSupportExtendedAttributes,
-    WhereFromValueLengthMismatch, UnsupportedFileSystemObject,
-)
+from wherefrom.read import WhereFromAttributeReader
 
 
 # READING THE VALUE ######################################################################
 
-# Simple Tests ---------------------------------------------------------------------------
+# Simple Values --------------------------------------------------------------------------
 
 def test_read_where_from_value__one_item(environment: Path):
     """Is a “where from” value consisting of one string read correctly?"""
@@ -49,7 +47,6 @@ WEIRD_TYPE_TESTS = [
     ("dict.png", {"foo": 23, "bar": [1, 2, 3]}),
 ]
 
-
 @pytest.mark.parametrize(("file_name", "expected"), WEIRD_TYPE_TESTS)
 def test_get_where_from_value__weird_types(environment, file_name, expected):
     """Just out of curiosity: Are various weird “where from” values actually possible?"""
@@ -61,49 +58,7 @@ def test_get_where_from_value__weird_types(environment, file_name, expected):
         assert actual == expected
 
 
-# Errors ---------------------------------------------------------------------------------
-
-# Some errors cannot be provoked using a real file; those are listed in `ERROR_CODE_TESTS`
-# and are tested by `test_private_get_reading_exception()`, below. `ERANGE` is tested by
-# `test_private_read_where_from_value__buffer_too_small()`, and `EPERM` is tested by
-# `test_read_where_from_value__unsupported_file_system_object()`.
-
-ERROR_TEST_PARAMETERS = ("file_name", "exception_class", "message_tail")
-ERROR_TESTS = [
-    ("no-value.png", FileHasNoWhereFromValue, "The file doesn’t have the value set"),
-    ("no-such-file.png", NoSuchFile, "The file doesn’t exist"),
-]
-
-
-@pytest.mark.parametrize(ERROR_TEST_PARAMETERS, ERROR_TESTS)
-def test_read_where_from_value__errors(
-    environment: Path,
-    file_name: str,
-    exception_class: type[Exception],
-    message_tail: str,
-):
-    """Does the function raise appropriate exceptions if something goes wrong?"""
-    path = environment / file_name
-    with pytest.raises(exception_class) as exception_information:
-        WhereFromAttributeReader().read_where_from_value(path)
-    expected_message = f"Could not read the “were from” value of “{path}”: {message_tail}"
-    assert str(exception_information.value) == expected_message
-
-
-def test_read_where_from_value__unsupported_file_system_object():
-    """Does the function raise `UnsupportedFileSystemObject` when it’s supposed to?"""
-    with pytest.raises(UnsupportedFileSystemObject) as exception_information:
-        WhereFromAttributeReader().read_where_from_value(Path("/dev/null"))
-    expected_message = (
-        "Could not read the “were from” value of “/dev/null”: That type of file system "
-        "object doesn’t support the “where from” attribute"
-    )
-    assert str(exception_information.value) == expected_message
-
-
 # PRIVATE METHODS ########################################################################
-
-# _read_where_from_value_length() --------------------------------------------------------
 
 def test_private_read_where_from_value_length(environment: Path):
     """Does `_read_where_from_value_length()` return the expected length?"""
@@ -112,53 +67,9 @@ def test_private_read_where_from_value_length(environment: Path):
     assert length == 77
 
 
-# _read_where_from_value() ---------------------------------------------------------------
-
 def test_private_read_where_from_value(environment: Path):
     """Does `_read_where_from_value()` return the expected binary value?"""
     path = environment / "simple" / "one-item.html"
     binary_value = WhereFromAttributeReader()._read_where_from_value(bytes(path), 77)
     assert binary_value.startswith(b"bplist00")
     assert b"http://nowhere.test/index.html" in binary_value
-
-
-def test_private_read_where_from_value__buffer_too_small(environment: Path):
-    """Does `_read_where_from_value()` handle `ERANGE`?"""
-    path = environment / "simple" / "one-item.html"
-    with pytest.raises(WhereFromValueLengthMismatch) as exception_information:
-        WhereFromAttributeReader()._read_where_from_value(bytes(path), 7)
-    expected_message = (
-        f"Could not read the “were from” value of “{path}”: Either the value has changed "
-        "while it was being read, or there has been an unexpected internal error"
-    )
-    assert str(exception_information.value) == expected_message
-
-
-# _get_reading_exception() ---------------------------------------------------------------
-
-# Errors that can be provoked using a real file are listed in `ERROR_TESTS` and are
-# tested by `test_read_where_from_value__errors()`, above.
-
-ERROR_CODE_TEST_PARAMETERS = ("error_code", "exception_class", "message_tail")
-ERROR_CODE_TESTS = [
-    (
-        45,
-        FileSystemDoesNotSupportExtendedAttributes,
-        "The file system doesn’t support extended file attributes",
-    ),
-]
-
-
-@pytest.mark.parametrize(ERROR_CODE_TEST_PARAMETERS, ERROR_CODE_TESTS)
-def test_private_get_reading_exception(
-    error_code: int,
-    exception_class: type[Exception],
-    message_tail: str,
-):
-    """Does `_get_reading_exception()` return an appropriate exception instance?"""
-    path = Path("/Users/no-one/nowhere/simulated-file.png")
-    path_bytes = bytes(path)
-    exception = WhereFromAttributeReader()._get_reading_exception(path_bytes, error_code)
-    assert isinstance(exception, exception_class)
-    expected_message = f"Could not read the “were from” value of “{path}”: {message_tail}"
-    assert str(exception) == expected_message
