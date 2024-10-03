@@ -10,7 +10,7 @@ import pytest
 from wherefrom.read import WhereFromAttributeReader
 from wherefrom.errors import (
     CannotReadWhereFromValue, NoSuchFile, FileHasNoWhereFromValue, UnsupportedFileSystem,
-    WhereFromValueLengthMismatch, UnsupportedFileSystemObject,
+    UnsupportedFileSystemObject, UnsupportedFileName, WhereFromValueLengthMismatch,
 )
 
 
@@ -29,6 +29,10 @@ ERROR_TESTS = [
     ),
     ("no-such-file.png", NoSuchFile, 2, "ENOENT", "The file doesn’t exist"),
     ("no-value.png/impossible.png", NoSuchFile, 20, "ENOTDIR", "The file doesn’t exist"),
+    (
+        f"l{'o' * 256}ng-name.png", UnsupportedFileName, 63, "ENAMETOOLONG",
+        "The length of the file’s name or that of it’s path exceeds the system limits",
+    ),
 ]
 
 @pytest.mark.parametrize(ERROR_TEST_PARAMETERS, ERROR_TESTS)

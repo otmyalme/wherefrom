@@ -10,6 +10,7 @@
         "docstrings",
         "EINVAL",
         "EISDIR",
+        "ENAMETOOLONG",
         "ENOATTR",
         "ENOENT",
         "ENOTDIR",
