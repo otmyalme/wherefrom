@@ -9,7 +9,8 @@ The application’s exception hierarchy is structured as follows:
              ├─ NoSuchFile
              ├─ FileHasNoWhereFromValue
              ├─ FileSystemDoesNotSupportExtendedAttributes
-             └─ WhereFromValueLengthMismatch
+             ├─ WhereFromValueLengthMismatch
+             └─ UnsupportedFileSystemObject
 """
 
 from dataclasses import dataclass

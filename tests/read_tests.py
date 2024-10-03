@@ -11,7 +11,7 @@ import pytest
 from wherefrom.read import (
     WhereFromAttributeReader,
     NoSuchFile, FileHasNoWhereFromValue, FileSystemDoesNotSupportExtendedAttributes,
-    WhereFromValueLengthMismatch,
+    WhereFromValueLengthMismatch, UnsupportedFileSystemObject,
 )
 
 
@@ -65,7 +65,8 @@ def test_get_where_from_value__weird_types(environment, file_name, expected):
 
 # Some errors cannot be provoked using a real file; those are listed in `ERROR_CODE_TESTS`
 # and are tested by `test_private_get_reading_exception()`, below. `ERANGE` is tested by
-# `test_private_read_where_from_value__buffer_too_small()`.
+# `test_private_read_where_from_value__buffer_too_small()`, and `EPERM` is tested by
+# `test_read_where_from_value__unsupported_file_system_object()`.
 
 ERROR_TEST_PARAMETERS = ("file_name", "exception_class", "message_tail")
 ERROR_TESTS = [
@@ -86,6 +87,17 @@ def test_read_where_from_value__errors(
     with pytest.raises(exception_class) as exception_information:
         WhereFromAttributeReader().read_where_from_value(path)
     expected_message = f"Could not read the “were from” value of “{path}”: {message_tail}"
+    assert str(exception_information.value) == expected_message
+
+
+def test_read_where_from_value__unsupported_file_system_object():
+    """Does the function raise `UnsupportedFileSystemObject` when it’s supposed to?"""
+    with pytest.raises(UnsupportedFileSystemObject) as exception_information:
+        WhereFromAttributeReader().read_where_from_value(Path("/dev/null"))
+    expected_message = (
+        "Could not read the “were from” value of “/dev/null”: That type of file system "
+        "object doesn’t support the “where from” attribute"
+    )
     assert str(exception_information.value) == expected_message
 
 

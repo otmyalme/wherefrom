@@ -10,6 +10,7 @@
         "ENOATTR",
         "ENOENT",
         "ENOTSUP",
+        "EPERM",
         "ERANGE",
         "froms",
         "getxattr",

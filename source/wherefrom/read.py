@@ -175,6 +175,15 @@ class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
     """
 
 
+class UnsupportedFileSystemObject(CannotReadWhereFromValue):
+    """
+    Raised when reading the “where from” attribute of a file system object that doesn’t
+    support the “where from” attribute (or extended attributes in general, presumably).
+    `/dev/null` qualifies, but it’s not clear what the exact rules are.
+    """
+    MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
+
+
 # A dict that maps error codes from `getxattr()` to their name and the appropriate
 # exception to throw.
 #
@@ -187,6 +196,7 @@ ERROR_INFORMATION = {
     93: ("ENOATTR", FileHasNoWhereFromValue),
     45: ("ENOTSUP", FileSystemDoesNotSupportExtendedAttributes),
     34: ("ERANGE", WhereFromValueLengthMismatch),
+     1: ("EPERM", UnsupportedFileSystemObject),
 }
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.
