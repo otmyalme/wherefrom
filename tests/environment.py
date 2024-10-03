@@ -45,6 +45,11 @@ def create_test_environment(environment_path: Path) -> None:
     _create_file(not_readable, "one-item.html", ["http://nowhere.test/"])
     not_readable.chmod(0o200)
 
+    endless_loop = _create_directory(errors, "endless-loop")
+    soon1 = _create_directory(endless_loop, "soon")
+    soon2 = _create_directory(soon1, "really-soon")
+    _create_symlink(soon2, LOOPING_SYMLINK_NAME, endless_loop)
+
     # Files whose “where from” value is of an unusual type
     weird_types_path = _create_directory(environment_path, "weird-types")
     _create_file(weird_types_path, "str.png", "This is a string")
@@ -106,6 +111,13 @@ def _create_png_file(path: Path) -> None:
         file.write(TINY_PNG_BYTES)
 
 
+def _create_symlink(parent_path: Path, name: str, target: Path) -> Path:
+    """Create a symbolic link to the given target."""
+    path = parent_path / name
+    path.symlink_to(target)
+    return path
+
+
 def _set_where_from_value(
     path: Path,
     value: WhereFromValue | Literal[Sentinel.NO_VALUE],
@@ -128,9 +140,9 @@ def delete_test_environment(path: Path) -> None:
     Delete the test environment.
 
     This function will recursively delete the contents of the given directory, but only
-    if it appears to safe to do so. The function will delete `.DS_Store` files, empty
-    files, and PNG files whose contents consist of a single white pixel, but will raise
-    an `AssertionError` if it encounters any other files.
+    if it appears safe to do so. The function will delete `.DS_Store` files, symlinks
+    named “loop.forever”, empty files, and PNG files whose contents consist of a single
+    white pixel, but will raise an `AssertionError` if it encounters any other files.
 
     If a file has its contents changed after the check whether it appears safe to delete
     it and its actual deletion, the file will still be deleted, however.
@@ -141,6 +153,8 @@ def delete_test_environment(path: Path) -> None:
 
 def _delete_directory(path: Path) -> None:
     """Recursively delete the directory at the given path, if it appears safe to do so."""
+    if path.stat().st_mode & 0o777 == 0o200:
+        path.chmod(0o700)  # Make any unreadable directories that were created readable
     for child_path in path.iterdir():
         _delete_item(child_path)
     path.rmdir()  # This would fail if the path still had contents
@@ -148,11 +162,7 @@ def _delete_directory(path: Path) -> None:
 
 def _delete_item(path: Path) -> None:
     """Delete the file or directory at the given path, it it appears safe to do so."""
-    if path.stat().st_mode & 0o777 == 0o200:
-        # The test environment includes a directory that isn’t readable; make it readable
-        # so that it can be deleted.
-        path.chmod(0o700)
-    if path.is_dir():
+    if path.is_dir() and not path.is_symlink():
         _delete_directory(path)
     else:
         _delete_file(path)  # The function will check whether `path` is actually a file
@@ -169,14 +179,18 @@ def _delete_file(path: Path) -> None:
 
 def _is_safe_to_delete(path: Path) -> bool:
     """Check whether it appears safe to delete the file at the given path."""
-    is_file = path.is_file()  # Make sure `path` isn’t a mount point, or something
-    is_ds_store = (path.name == ".DS_Store")
-    is_empty = (path.stat().st_size == 0)
-    is_tiny_png = (path.suffix == ".png" and path.read_bytes() == TINY_PNG_BYTES)
-    return is_file and (is_ds_store or is_empty or is_tiny_png)
+    if path.is_symlink():
+        return path.name == LOOPING_SYMLINK_NAME
+    elif path.is_file():  # Make sure `path` isn’t a mount point, or something
+        is_ds_store = (path.name == ".DS_Store")
+        is_empty = (path.stat().st_size == 0)
+        is_tiny_png = (path.suffix == ".png" and path.read_bytes() == TINY_PNG_BYTES)
+        return is_ds_store or is_empty or is_tiny_png
+    else:  # pragma: no cover
+        return False
 
 
-# FILE CONTENTS AND SAMPLE VALUES ########################################################
+# MISCELLANEOUS ##########################################################################
 
 # A PNG file consisting of a single white pixel, encoded as a string of hexadecimal
 # digits. Used so that the PNGs created as test files are actually valid.
@@ -193,3 +207,6 @@ TINY_PNG_BYTES = bytes.fromhex(TINY_PNG_HEX)
 # A sample datetime object. This doesn’t have a time zone because it’s passed to
 # `plistlib.dumps`, which explodes if given datetimes with time zones.
 SAMPLE_DATETIME = datetime(2023, 5, 23, 23, 23, 23)  # noqa: DTZ001  # See above
+
+# The name given to symlinks that would cause endless loops if indiscriminately followed.
+LOOPING_SYMLINK_NAME = "loop.forever"

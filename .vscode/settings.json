@@ -11,6 +11,7 @@
         "EACCES",
         "EINVAL",
         "EISDIR",
+        "elif",
         "ENAMETOOLONG",
         "ENOATTR",
         "ENOENT",

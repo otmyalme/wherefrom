@@ -135,7 +135,8 @@ ignore = [
     "N818",     # Exception classes without an “Error” suffix; Not the project’s style
     "PLR6301",  # Methods that don’t use `self`; that’s sometimes good code organization
     "RET504",   # Allow unnecessary assignment of returned variables; sometimes good
-    "RET506",   # Allow unnecessary else after return; that makes the logic easier to read
+    "RET505",   # Allow elif after return statements; that makes the logic more readable
+    "RET506",   # Allow else after return statements; ditto
     "TD",       # Invalid TODO tags; TODOs are already forbidden by FIX
 ]
 allowed-confusables = [
