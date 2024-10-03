@@ -77,7 +77,7 @@ class CannotReadWhereFromValue(ReadWhereFromValueError):
 class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
     """
     Raised when reading the “where from” value of a file that does not exist.
-    The corresponding `getxattr()` error name is `ENOENT`.
+    The corresponding `getxattr()` error names are `ENOENT` and `ENOTDIR`.
     """
     MESSAGE = "The file doesn’t exist"
 

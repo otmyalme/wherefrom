@@ -28,6 +28,7 @@ ERROR_TESTS = [
         "The file doesn’t have the value set",
     ),
     ("no-such-file.png", NoSuchFile, 2, "ENOENT", "The file doesn’t exist"),
+    ("no-value.png/impossible.png", NoSuchFile, 20, "ENOTDIR", "The file doesn’t exist"),
 ]
 
 @pytest.mark.parametrize(ERROR_TEST_PARAMETERS, ERROR_TESTS)

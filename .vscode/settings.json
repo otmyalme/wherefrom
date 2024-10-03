@@ -12,6 +12,7 @@
         "EISDIR",
         "ENOATTR",
         "ENOENT",
+        "ENOTDIR",
         "ENOTSUP",
         "EPERM",
         "ERANGE",

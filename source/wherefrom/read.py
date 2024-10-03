@@ -145,6 +145,7 @@ ERROR_INFORMATION = {
      1: ("EPERM", UnsupportedFileSystemObject),
     22: ("EINVAL", CannotReadWhereFromValue),  # Cannot happen; see below
     21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
+    20: ("ENOTDIR", NoSuchFile),
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
