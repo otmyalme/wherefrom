@@ -150,6 +150,16 @@ class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
     MESSAGE = "The file doesn’t have the value set"
 
 
+class FileSystemDoesNotSupportExtendedAttributes(CannotReadWhereFromValue):
+    """
+    Raised if the file system doesn’t support extended file attributes.
+
+    This hasn’t, so far, been tested on an actual file. Experiments involving FAT and
+    ExFAT disk images created by macOS and the internal memory of an ancient digital
+    camera found that all support extended file attributes.
+    """
+    MESSAGE = "The file system doesn’t support extended file attributes"
+
 
 # A dict that maps error codes from `getxattr()` to their name and the appropriate
 # exception to throw.
@@ -161,6 +171,7 @@ ERROR_INFORMATION = {
      2: ("ENOENT", NoSuchFile),
     # Documented codes in the order they appear on the `getxattr` manpage
     93: ("ENOATTR", FileHasNoWhereFromValue),
+    45: ("ENOTSUP", FileSystemDoesNotSupportExtendedAttributes),
 }
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.

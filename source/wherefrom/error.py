@@ -7,7 +7,8 @@ The application’s exception hierarchy is structured as follows:
      └─ ReadWhereFromValueError
          └─ CannotReadWhereFromValue
              ├─ NoSuchFile
-             └─ FileHasNoWhereFromValue
+             ├─ FileHasNoWhereFromValue
+             └─ FileSystemDoesNotSupportExtendedAttributes
 """
 
 from dataclasses import dataclass

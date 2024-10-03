@@ -9,6 +9,7 @@
         "docstrings",
         "ENOATTR",
         "ENOENT",
+        "ENOTSUP",
         "froms",
         "getxattr",
         "libc",
