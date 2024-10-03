@@ -107,6 +107,10 @@ ERROR_CODE_TESTS = [
         22, CannotReadWhereFromValue, "EINVAL",
         "An unexpected error ocurred (error code 22)",
     ),
+    (
+        21, UnsupportedFileSystemObject, "EISDIR",
+        "That type of file system object doesn’t support the “where from” attribute",
+    ),
 ]
 
 @pytest.mark.parametrize(ERROR_CODE_TEST_PARAMETERS, ERROR_CODE_TESTS)

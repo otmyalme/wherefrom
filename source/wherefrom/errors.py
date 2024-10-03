@@ -75,12 +75,18 @@ class CannotReadWhereFromValue(ReadWhereFromValueError):
 # Common Errors --------------------------------------------------------------------------
 
 class NoSuchFile(CannotReadWhereFromValue, FileNotFoundError):
-    """Raised when reading the “where from” value of a file that does not exist."""
+    """
+    Raised when reading the “where from” value of a file that does not exist.
+    The corresponding `getxattr()` error name is `ENOENT`.
+    """
     MESSAGE = "The file doesn’t exist"
 
 
 class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
-    """Raised when reading the “where from” value of a file that doesn’t have one."""
+    """
+    Raised when reading the “where from” value of a file that doesn’t have one.
+    The corresponding `getxattr()` error name is `ENOATTR`.
+    """
     MESSAGE = "The file doesn’t have the value set"
 
 
@@ -93,6 +99,8 @@ class UnsupportedFileSystem(CannotReadWhereFromValue):
     This hasn’t, so far, been tested on an actual file. Experiments involving FAT and
     ExFAT disk images created by macOS and the internal memory of an ancient digital
     camera found that all support extended file attributes.
+
+    The corresponding `getxattr()` error name is `ENOTSUP`.
     """
     MESSAGE = "The file system doesn’t support extended file attributes"
 
@@ -100,8 +108,10 @@ class UnsupportedFileSystem(CannotReadWhereFromValue):
 class UnsupportedFileSystemObject(CannotReadWhereFromValue):
     """
     Raised when reading the “where from” attribute of a file system object that doesn’t
-    support the attribute (or extended attributes in general, presumably). `/dev/null`
-    qualifies, but it’s not clear what the exact rules are.
+    support the attribute (or extended attributes in general). `/dev/null` qualifies, but
+    it’s not clear what the exact rules are.
+
+    The corresponding `getxattr()` error names are `EPERM` and `EISDIR`.
     """
     MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
 
@@ -115,6 +125,8 @@ class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
     value in the time between the call to `_read_where_from_value_length()` and the call
     to `_read_where_from_value_length()`, or there may be a bug in this application, or
     maybe even in `getxattr()`.
+
+    The corresponding `getxattr()` error name is `ERANGE`.
     """
     MESSAGE = """
         Either the value has changed while it was being read, or there has been an

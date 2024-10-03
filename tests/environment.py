@@ -32,7 +32,7 @@ def create_test_environment(environment_path: Path) -> None:
     environment_path.mkdir()
 
     # Files whose “where from” value can be read without any issues
-    simple = _create_directory(environment_path, "simple")
+    simple = _create_directory(environment_path, "simple", ["http://nowhere.test/"])
     _create_file(simple, "one-item.html", ["http://nowhere.test/index.html"])
     _create_file(simple, "two-items.png",
         ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"])
@@ -55,10 +55,15 @@ def create_test_environment(environment_path: Path) -> None:
     _create_file(weird_types_path, "dict.png", {"foo": 23, "bar": [1, 2, 3]})
 
 
-def _create_directory(parent_path: Path, name: str) -> Path:
+def _create_directory(
+    parent_path: Path,
+    name: str,
+    where_from_value: WhereFromValue | Literal[Sentinel.NO_VALUE] = Sentinel.NO_VALUE,
+) -> Path:
     """Create a directory with the given name at the given path and return its path."""
     path = parent_path / name
     path.mkdir()
+    _set_where_from_value(path, where_from_value)
     return path
 
 
@@ -85,8 +90,7 @@ def _create_file(
     else:
         path.touch()
 
-    if where_from_value is not Sentinel.NO_VALUE:
-        _set_where_from_value(path, where_from_value)
+    _set_where_from_value(path, where_from_value)
 
     return path
 
@@ -97,15 +101,19 @@ def _create_png_file(path: Path) -> None:
         file.write(TINY_PNG_BYTES)
 
 
-def _set_where_from_value(path, value: WhereFromValue) -> None:
+def _set_where_from_value(
+    path: Path,
+    value: WhereFromValue | Literal[Sentinel.NO_VALUE],
+) -> None:
     """Set the “where from” attribute of the file at the given path to the given value."""
-    fmt = plistlib.FMT_BINARY
-    binary_value = plistlib.dumps(value, fmt=fmt)  # type: ignore [arg-type]  # I’m sure
-    hexadecimal_value = binary_value.hex()
-    # Use `xattr` to set the value rather than using `ctypes` in the tests, too.
-    # “-wx” means “write a value that’s provided in hexadecimal”.
-    command = ["xattr", "-wx", WHERE_FROM_ATTRIBUTE_NAME, hexadecimal_value, str(path)]
-    subprocess.run(command, check=True)
+    if value is not Sentinel.NO_VALUE:
+        fmt = plistlib.FMT_BINARY
+        binary_value = plistlib.dumps(value, fmt=fmt)  # type: ignore [arg-type]
+        hexadecimal_value = binary_value.hex()
+        # Use `xattr` to set the value rather than using `ctypes` in the tests, too.
+        # “-wx” means “write a value that’s provided in hexadecimal”.
+        command = ("xattr", "-wx", WHERE_FROM_ATTRIBUTE_NAME, hexadecimal_value, path)
+        subprocess.run(command, check=True)
 
 
 # DELETE #################################################################################

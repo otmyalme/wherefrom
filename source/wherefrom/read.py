@@ -144,12 +144,19 @@ ERROR_INFORMATION = {
     34: ("ERANGE", WhereFromValueLengthMismatch),
      1: ("EPERM", UnsupportedFileSystemObject),
     22: ("EINVAL", CannotReadWhereFromValue),  # Cannot happen; see below
+    21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
 # been passed to `getxattr()`. That shouldn’t be possible, since the application only
 # uses a single attribute name, and doesn’t use any options. Accordingly, there is no
 # specific `CannotReadWhereFromValue` subclass for this case.
+#
+# `EISDIR` is, according to the manpage, similar to `EPERM`, and is used if the path isn’t
+# a regular file, but the attribute in question can only be used for files. It’s not clear
+# whether that can actually happen; the name suggests the error would occur if the path is
+# a directory, but reading the “where from” value of a directory works just fine (on an
+# APFS volume, at least).
 
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.

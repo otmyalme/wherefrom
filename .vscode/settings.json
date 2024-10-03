@@ -5,9 +5,11 @@
     ],
     "cSpell.words": [
         "addopts",
+        "APFS",
         "confusables",
         "docstrings",
         "EINVAL",
+        "EISDIR",
         "ENOATTR",
         "ENOENT",
         "ENOTSUP",

@@ -31,6 +31,13 @@ def test_read_where_from_value__two_items(environment: Path):
     assert value == ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"]
 
 
+def test_read_where_from_value__directory(environment: Path):
+    """What if the file is actually a directory?"""
+    path = environment / "simple"
+    value = WhereFromAttributeReader().read_where_from_value(path)
+    assert value == ["http://nowhere.test/"]
+
+
 # Weird Values ---------------------------------------------------------------------------
 
 WEIRD_TYPE_TESTS = [
