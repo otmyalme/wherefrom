@@ -11,6 +11,7 @@ import pytest
 from wherefrom.read import (
     WhereFromAttributeReader,
     NoSuchFile, FileHasNoWhereFromValue, FileSystemDoesNotSupportExtendedAttributes,
+    WhereFromValueLengthMismatch,
 )
 
 
@@ -63,7 +64,8 @@ def test_get_where_from_value__weird_types(environment, file_name, expected):
 # Errors ---------------------------------------------------------------------------------
 
 # Some errors cannot be provoked using a real file; those are listed in `ERROR_CODE_TESTS`
-# and are tested by `test_private_get_reading_exception()`, below.
+# and are tested by `test_private_get_reading_exception()`, below. `ERANGE` is tested by
+# `test_private_read_where_from_value__buffer_too_small()`.
 
 ERROR_TEST_PARAMETERS = ("file_name", "exception_class", "message_tail")
 ERROR_TESTS = [
@@ -106,6 +108,18 @@ def test_private_read_where_from_value(environment: Path):
     binary_value = WhereFromAttributeReader()._read_where_from_value(bytes(path), 77)
     assert binary_value.startswith(b"bplist00")
     assert b"http://nowhere.test/index.html" in binary_value
+
+
+def test_private_read_where_from_value__buffer_too_small(environment: Path):
+    """Does `_read_where_from_value()` handle `ERANGE`?"""
+    path = environment / "simple" / "one-item.html"
+    with pytest.raises(WhereFromValueLengthMismatch) as exception_information:
+        WhereFromAttributeReader()._read_where_from_value(bytes(path), 7)
+    expected_message = (
+        f"Could not read the “were from” value of “{path}”: Either the value has changed "
+        "while it was being read, or there has been an unexpected internal error"
+    )
+    assert str(exception_information.value) == expected_message
 
 
 # _get_reading_exception() ---------------------------------------------------------------

@@ -161,6 +161,20 @@ class FileSystemDoesNotSupportExtendedAttributes(CannotReadWhereFromValue):
     MESSAGE = "The file system doesn’t support extended file attributes"
 
 
+class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
+    """
+    Raised if the buffer passed to `_read_where_from_value()` is too small to hold the
+    “where from” value. A different process may have changed the file’s “where from”
+    value in the time between the call to `_read_where_from_value_length()` and the call
+    to `_read_where_from_value_length()`, or there may be a bug in this application, or
+    in `getxattr()`.
+    """
+    MESSAGE = """
+        Either the value has changed while it was being read, or there has been an
+        unexpected internal error
+    """
+
+
 # A dict that maps error codes from `getxattr()` to their name and the appropriate
 # exception to throw.
 #
@@ -172,6 +186,7 @@ ERROR_INFORMATION = {
     # Documented codes in the order they appear on the `getxattr` manpage
     93: ("ENOATTR", FileHasNoWhereFromValue),
     45: ("ENOTSUP", FileSystemDoesNotSupportExtendedAttributes),
+    34: ("ERANGE", WhereFromValueLengthMismatch),
 }
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.

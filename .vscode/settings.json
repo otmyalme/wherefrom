@@ -10,6 +10,7 @@
         "ENOATTR",
         "ENOENT",
         "ENOTSUP",
+        "ERANGE",
         "froms",
         "getxattr",
         "libc",
