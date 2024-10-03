@@ -118,7 +118,11 @@ class WhereFromAttributeReader:
         return value  # type: ignore [no-any-return]  # I’ve read the source code
 
 
-    def _get_reading_exception(self, path: bytes, error_code: int) -> Exception:
+    def _get_reading_exception(
+        self,
+        path: bytes,
+        error_code: int,
+    ) -> CannotReadWhereFromValue:
         """Get an exception to throw for `getxattr()` errors with the given code."""
         proper_path = Path(path.decode("utf8", errors="replace"))
         default = DEFAULT_ERROR_INFORMATION
@@ -139,7 +143,14 @@ ERROR_INFORMATION = {
     45: ("ENOTSUP", UnsupportedFileSystem),
     34: ("ERANGE", WhereFromValueLengthMismatch),
      1: ("EPERM", UnsupportedFileSystemObject),
+    22: ("EINVAL", CannotReadWhereFromValue),  # Cannot happen; see below
 }
+
+# `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
+# been passed to `getxattr()`. That shouldn’t be possible, since the application only
+# uses a single attribute name, and doesn’t use any options. Accordingly, there is no
+# specific `CannotReadWhereFromValue` subclass for this case.
+
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.
 DEFAULT_ERROR_INFORMATION = ("UNKNOWN", CannotReadWhereFromValue)

@@ -144,6 +144,8 @@ allowed-confusables = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
     "D400",     # Allow the first docstring line to end with a question mark in test files
+    "PLR0913",  # Allow lots of arguments in tests
+    "PLR0917",  # Allow lots of positional arguments in tests
     "PLR2004",  # Allow magic values in tests
     "S101",     # Allow assert statements in tests
     "S404",     # Allow use of the `subprocess` module
