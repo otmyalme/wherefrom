@@ -151,6 +151,7 @@ ERROR_INFORMATION = {
     63: ("ENAMETOOLONG", UnsupportedFileName),
     13: ("EACCES", FileNotReadable),
     62: ("ELOOP", TooManySymlinks),
+    14: ("EFAULT", CannotReadWhereFromValue),  # Probably cannot happen; see below
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
@@ -163,6 +164,9 @@ ERROR_INFORMATION = {
 # whether that can actually happen; the name suggests the error would occur if the path is
 # a directory, but reading the “where from” value of a directory works just fine (on an
 # APFS volume, at least).
+#
+# `EFAULT` indicates that the path or attribute name passed to `getxattr()` points to an
+# invalid memory address. That would indicate a bug in `ctypes`.
 
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.

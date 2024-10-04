@@ -9,6 +9,7 @@
         "confusables",
         "docstrings",
         "EACCES",
+        "EFAULT",
         "EINVAL",
         "EISDIR",
         "elif",
