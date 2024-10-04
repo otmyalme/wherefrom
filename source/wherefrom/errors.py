@@ -5,13 +5,13 @@ The exception hierarchy is structured as follows:
 
     WhereFromException
      └─ ReadWhereFromValueError
-         ├─ MalformedWhereFromValue
+         ├─ UnexpectedWhereFromValue
          └─ CannotReadWhereFromValue
              ├─ FileHasNoWhereFromValue
              ├─ NoSuchFile
              ├─ FileNotReadable
              ├─ TooManySymlinks
-             ├─ UnsupportedFileName
+             ├─ UnsupportedPath
              ├─ UnsupportedFileSystem
              ├─ UnsupportedFileSystemObject
              ├─ WhereFromValueLengthMismatch
@@ -66,12 +66,12 @@ class ReadWhereFromValueError(WhereFromException):
 
 # UNEXPECTED VALUES
 
-class MalformedWhereFromValue(ReadWhereFromValueError):
+class UnexpectedWhereFromValue(ReadWhereFromValueError):
     """
     Raised if a file’s “where from” value is something other than a list of strings.
     (Empty lists also cause this error to be raised.)
     """
-    MESSAGE = "Encountered a malformed “where from” value in “{path}”"
+    MESSAGE = "Encountered an unexpected “where from” value in “{path}”"
     value: object
 
 
@@ -126,7 +126,7 @@ class TooManySymlinks(CannotReadWhereFromValue):
     MESSAGE = "Had to traverse too many symbolic links"
 
 
-class UnsupportedFileName(CannotReadWhereFromValue):
+class UnsupportedPath(CannotReadWhereFromValue):
     """
     Raised when reading the “where from” value of a file whose name or path is too long.
 

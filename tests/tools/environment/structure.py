@@ -6,15 +6,14 @@ test environment. The actual creation and deletion of individual files and direc
 handled by `tests.tools.environment.items`.
 """
 
-from datetime import datetime
 from pathlib import Path
-import plistlib
 
 from tests.tools import Sentinel
 from tests.tools.environment.items import (
     create_file, create_directory, create_symlink, create_looping_symlink,
     delete_directory, WhereFromValue,
 )
+from tests.read.unhappy_value_tests import UNEXPECTED_WHERE_FROM_VALUE_TEST_CASES
 
 
 # CREATE #################################################################################
@@ -39,7 +38,8 @@ def create_simple_files(environment_path: Path) -> None:
 def create_files_with_unexpected_values(environment_path: Path) -> None:
     """Create a set of files with unexpected “where from” values."""
     directory = create_directory(environment_path, "unexpected")
-    for name, value in UNEXPECTED_VALUES:
+    # Take the list of files to create from the definition of the test cases.
+    for name, value in UNEXPECTED_WHERE_FROM_VALUE_TEST_CASES:
         create_file(directory, name, value)
 
 
@@ -84,20 +84,6 @@ def create_symlink_loops(environment_path: Path) -> None:
 
 ONE_URL: list[WhereFromValue] = ["http://nowhere.test/index.html"]
 TWO_URLS: list[WhereFromValue] = ["http://nowhere.test/banner.png", *ONE_URL]
-
-UNEXPECTED_VALUES: list[tuple[str, WhereFromValue]] = [
-    ("str.txt", "This is a string"),
-    ("bytes.txt", b"This is a bytes object"),
-    ("bytearray.txt", bytearray.fromhex("e29d93")),
-    ("int.txt", 23),
-    ("float.txt", 23.5),
-    ("bool.txt", True),
-    ("datetime.txt", datetime(2023, 5, 23, 23, 23, 23)),  # noqa: DTZ001
-    ("uid.txt", plistlib.UID(23)),
-    ("none.txt", None),
-    ("list.txt", ["foo", 23, b"ar", [1, 2, 3]]),
-    ("dict.txt", {"foo": 23, "bar": [1, 2, 3]}),
-]
 
 
 # DELETE #################################################################################

@@ -12,9 +12,9 @@ from pathlib import Path
 import plistlib
 
 from wherefrom.errors import (
-    MalformedWhereFromValue, CannotReadWhereFromValue,
+    UnexpectedWhereFromValue, CannotReadWhereFromValue,
     FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
-    TooManySymlinks, UnsupportedFileName,
+    TooManySymlinks, UnsupportedPath,
     UnsupportedFileSystem, UnsupportedFileSystemObject,
     WhereFromValueLengthMismatch, IOErrorReadingWhereFromValue,
 )
@@ -61,7 +61,7 @@ class WhereFromAttributeReader:
         if is_nonempty_list_of_strings(value):
             return value
         else:
-            raise MalformedWhereFromValue(path, value)
+            raise UnexpectedWhereFromValue(path, value)
 
 
     def _read_where_from_value_length(self, path: bytes) -> int:
@@ -139,7 +139,7 @@ ERROR_INFORMATION = {
     22: ("EINVAL", CannotReadWhereFromValue),  # Cannot happen; see below
     21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
     20: ("ENOTDIR", NoSuchFile),
-    63: ("ENAMETOOLONG", UnsupportedFileName),
+    63: ("ENAMETOOLONG", UnsupportedPath),
     13: ("EACCES", FileNotReadable),
     62: ("ELOOP", TooManySymlinks),
     14: ("EFAULT", CannotReadWhereFromValue),  # Probably cannot happen; see below

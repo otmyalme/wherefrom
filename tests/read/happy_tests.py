@@ -1,5 +1,5 @@
 """
-Test the `wherefrom.read` module.
+Test the happy paths of the `wherefrom.read` module.
 
 Errors are tested by `tests.read_error_tests`, not by this module.
 """

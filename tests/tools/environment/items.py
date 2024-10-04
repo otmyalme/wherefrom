@@ -25,7 +25,7 @@ from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME
 # https://github.com/python/cpython/blob/3.12/Lib/plistlib.py#L746. (The type annotation
 # given by `typeshed` is wrong.)
 #
-# (When _reading_ a “where from” value, the result cannot be a tuple.)
+# (When _reading_ a “where from” value, the result cannot be a tuple or bytearray.)
 type WhereFromValue = (
     None | bool | int | float | datetime | bytes | bytearray | str | plistlib.UID |
     list["WhereFromValue"] | tuple["WhereFromValue", ...] | dict[str, "WhereFromValue"]
