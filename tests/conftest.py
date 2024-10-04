@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.environment import create_test_environment, delete_test_environment
+from tests.tools.environment import create_test_environment, delete_test_environment
 from tests.tools import get_developer_visible_temporary_directory
 
 

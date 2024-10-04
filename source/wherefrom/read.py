@@ -32,8 +32,10 @@ LIBRARY_NAME = "libc"
 # source code and some experimentation resulted in the following type.
 #
 # In practice, values will usually be of type `list[str]`, however.
-type WhereFromValue = (str | bytes | bytearray | int | float | bool | datetime |
-    plistlib.UID | None | list["WhereFromValue"] | dict[str, "WhereFromValue"])
+#
+# (The type includes a redundant `list[str]` because mypy is being weird.)
+type WhereFromValue = (str | bytes | bytearray | int | float | bool | datetime | None |
+    plistlib.UID | list[str] | list["WhereFromValue"] | dict[str, "WhereFromValue"])
 
 
 class WhereFromAttributeReader:

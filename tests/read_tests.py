@@ -33,31 +33,31 @@ def test_read_where_from_value__two_items(environment: Path):
 
 def test_read_where_from_value__directory(environment: Path):
     """What if the file is actually a directory?"""
-    path = environment / "simple"
+    path = environment / "simple" / "directory-with-where-from-value"
     value = WhereFromAttributeReader().read_where_from_value(path)
-    assert value == ["http://nowhere.test/"]
+    assert value == ["http://nowhere.test/index.html"]
 
 
-# Weird Values ---------------------------------------------------------------------------
+# Unexpected Values ----------------------------------------------------------------------
 
-WEIRD_TYPE_TESTS = [
-    ("str.png", "This is a string"),
-    ("bytes.png", b"This is a bytes object"),
-    ("bytearray.png", bytearray.fromhex("e29d93")),
-    ("int.png", 23),
-    ("float.png", 23.5),
-    ("bool.png", True),
-    ("datetime.png", datetime(2023, 5, 23, 23, 23, 23)),  # noqa: DTZ001  # Yes, no TZ
-    ("uid.png", UID(23)),
-    ("none.png", None),
-    ("list.png", ["foo", 23, b"ar", [1, 2, 3]]),
-    ("dict.png", {"foo": 23, "bar": [1, 2, 3]}),
+UNEXPECTED_VALUES = [
+    ("str.txt", "This is a string"),
+    ("bytes.txt", b"This is a bytes object"),
+    ("bytearray.txt", bytearray.fromhex("e29d93")),
+    ("int.txt", 23),
+    ("float.txt", 23.5),
+    ("bool.txt", True),
+    ("datetime.txt", datetime(2023, 5, 23, 23, 23, 23)),  # noqa: DTZ001  # Yes, no TZ
+    ("uid.txt", UID(23)),
+    ("none.txt", None),
+    ("list.txt", ["foo", 23, b"ar", [1, 2, 3]]),
+    ("dict.txt", {"foo": 23, "bar": [1, 2, 3]}),
 ]
 
-@pytest.mark.parametrize(("file_name", "expected"), WEIRD_TYPE_TESTS)
-def test_get_where_from_value__weird_types(environment, file_name, expected):
-    """Just out of curiosity: Are various weird “where from” values actually possible?"""
-    path = environment / "weird-types" / file_name
+@pytest.mark.parametrize(("file_name", "expected"), UNEXPECTED_VALUES)
+def test_get_where_from_value__unexpected_values(environment, file_name, expected):
+    """Are “where from” values of unexpected types read correctly?"""
+    path = environment / "unexpected" / file_name
     actual = WhereFromAttributeReader().read_where_from_value(path)
     if isinstance(expected, bool):
         assert actual is expected

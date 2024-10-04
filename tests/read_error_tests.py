@@ -25,7 +25,7 @@ ERROR_TEST_PARAMETERS = (
 )
 ERROR_TESTS = [
     (
-        "errors/no-value.png", FileHasNoWhereFromValue, 93, "ENOATTR",
+        "errors/no-value.html", FileHasNoWhereFromValue, 93, "ENOATTR",
         "The file doesn’t have the value set",
     ),
     (
@@ -33,7 +33,7 @@ ERROR_TESTS = [
         "The file doesn’t exist",
     ),
     (
-        "errors/no-value.png/impossible.png", NoSuchFile, 20, "ENOTDIR",
+        "errors/no-value.html/impossible.png", NoSuchFile, 20, "ENOTDIR",
         "The file doesn’t exist",
     ),
     (
