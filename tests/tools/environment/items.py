@@ -6,13 +6,32 @@ of individual files and directories. Deciding which files should actually be cre
 the handled by `tests.tools.environment.structure`.
 """
 
+from datetime import datetime
 from pathlib import Path
 import plistlib
 import subprocess
 from typing import Literal
 
 from tests.tools import Sentinel
-from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME, WhereFromValue
+from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME
+
+
+# TYPES ##################################################################################
+
+# The type of the “where from” values that can be set for test files.
+#
+# This is the type of the values `plistlib` can convert into a property list. This was
+# determined by reading the implementation of `_BinaryPlistWriter._write_object()` at
+# https://github.com/python/cpython/blob/3.12/Lib/plistlib.py#L746. (The type annotation
+# given by `typeshed` is wrong.)
+#
+# (When _reading_ a “where from” value, the result cannot be a tuple.)
+type WhereFromValue = (
+    None | bool | int | float | datetime | bytes | bytearray | str | plistlib.UID |
+    list["WhereFromValue"] | tuple["WhereFromValue", ...] | dict[str, "WhereFromValue"]
+)
+
+type OptionalWhereFromValue = WhereFromValue | Literal[Sentinel.NO_VALUE]
 
 
 # CREATE #################################################################################
@@ -20,7 +39,7 @@ from wherefrom.read import WHERE_FROM_ATTRIBUTE_NAME, WhereFromValue
 def create_directory(
     parent_path: Path,
     name: str,
-    where_from_value: WhereFromValue | Literal[Sentinel.NO_VALUE] = Sentinel.NO_VALUE,
+    where_from_value: OptionalWhereFromValue = Sentinel.NO_VALUE,
 ) -> Path:
     """Create a directory with the given name at the given path and return its path."""
     path = parent_path / name
@@ -32,7 +51,7 @@ def create_directory(
 def create_file(
     parent_path: Path,
     name: str,
-    where_from_value: WhereFromValue | Literal[Sentinel.NO_VALUE],
+    where_from_value: OptionalWhereFromValue,
 ) -> Path:
     """
     Create a file with the given name at the given path and return its path.
@@ -73,10 +92,7 @@ def create_looping_symlink(parent_path: Path, target: Path) -> Path:
     return create_symlink(parent_path, LOOPING_SYMLINK_NAME, target)
 
 
-def set_where_from_value(
-    path: Path,
-    value: WhereFromValue | Literal[Sentinel.NO_VALUE],
-) -> None:
+def set_where_from_value(path: Path, value: OptionalWhereFromValue) -> None:
     """Set the “where from” attribute of the file at the given path to the given value."""
     if value is not Sentinel.NO_VALUE:
         fmt = plistlib.FMT_BINARY

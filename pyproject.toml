@@ -128,6 +128,8 @@ ignore = [
     "D204",     # No empty line after class docstring; that’s sometimes okay
     "D205",     # No empty line after first docstring line; long summaries may be good
     "D212",     # Docstring starts on a new line; the project prefers to do it that way
+    "D400",     # Missing punctuation in comments, allegedly; has false positives for “.)”
+    "D415",     # ditto
     "DOC",      # Missing docstring items; the project doesn’t use that docstring format
     "E302",     # Not enough empty lines; one empty line may be enough in some cases
     "E303",     # Too many empty lines; the project uses extra lines between methods

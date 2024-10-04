@@ -13,7 +13,7 @@ import plistlib
 from tests.tools import Sentinel
 from tests.tools.environment.items import (
     create_file, create_directory, create_symlink, create_looping_symlink,
-    delete_directory,
+    delete_directory, WhereFromValue,
 )
 
 
@@ -40,7 +40,7 @@ def create_files_with_unexpected_values(environment_path: Path) -> None:
     """Create a set of files with unexpected “where from” values."""
     directory = create_directory(environment_path, "unexpected")
     for name, value in UNEXPECTED_VALUES:
-        create_file(directory, name, value)  # type: ignore [arg-type]
+        create_file(directory, name, value)
 
 
 def create_files_that_cause_errors(environment_path: Path) -> None:
@@ -82,10 +82,10 @@ def create_symlink_loops(environment_path: Path) -> None:
 
 # VALUES
 
-ONE_URL = ["http://nowhere.test/index.html"]
-TWO_URLS = ["http://nowhere.test/banner.png", *ONE_URL]
+ONE_URL: list[WhereFromValue] = ["http://nowhere.test/index.html"]
+TWO_URLS: list[WhereFromValue] = ["http://nowhere.test/banner.png", *ONE_URL]
 
-UNEXPECTED_VALUES = [
+UNEXPECTED_VALUES: list[tuple[str, WhereFromValue]] = [
     ("str.txt", "This is a string"),
     ("bytes.txt", b"This is a bytes object"),
     ("bytearray.txt", bytearray.fromhex("e29d93")),

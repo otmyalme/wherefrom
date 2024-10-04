@@ -8,16 +8,17 @@ by `man getxattr`.
 
 import ctypes
 import ctypes.util
-from datetime import datetime
 from pathlib import Path
 import plistlib
 
 from wherefrom.errors import (
-    CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
-    TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
-    UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
-    IOErrorReadingWhereFromValue,
+    MalformedWhereFromValue, CannotReadWhereFromValue,
+    FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
+    TooManySymlinks, UnsupportedFileName,
+    UnsupportedFileSystem, UnsupportedFileSystemObject,
+    WhereFromValueLengthMismatch, IOErrorReadingWhereFromValue,
 )
+from wherefrom.tools import is_nonempty_list_of_strings
 
 
 # The full name of the “where from” attribute, as a string and a bytes object.
@@ -27,16 +28,6 @@ WHERE_FROM_ATTRIBUTE_NAME_BYTES = WHERE_FROM_ATTRIBUTE_NAME.encode("ascii")
 # The name of the C library that provides the necessary functionality for reading the
 # “where from“ attribute.
 LIBRARY_NAME = "libc"
-
-# The type of all possible “where from” values. `typeshed` annotates the return value of
-# the standard library function used to parse the binary values as `Any`, but reading the
-# source code and some experimentation resulted in the following type.
-#
-# In practice, values will usually be of type `list[str]`, however.
-#
-# (The type includes a redundant `list[str]` because mypy is being weird.)
-type WhereFromValue = (str | bytes | bytearray | int | float | bool | datetime | None |
-    plistlib.UID | list[str] | list["WhereFromValue"] | dict[str, "WhereFromValue"])
 
 
 class WhereFromAttributeReader:
@@ -54,13 +45,9 @@ class WhereFromAttributeReader:
         self.library = ctypes.CDLL(ctypes.util.find_library(LIBRARY_NAME), use_errno=True)
 
 
-    def read_where_from_value(self, path: Path) -> WhereFromValue:
+    def read_where_from_value(self, path: Path) -> list[str]:
         """
         Read the “where from” value of the given object and return it as a Python object.
-
-        The returned value is most likely a list of strings, but values of other types
-        can be returned if the file’s “where from” attribute has been set in an unusual
-        manner. Checking for these cases is the responsibility of the caller.
 
         The function raises `ReadWhereFromValueError` (or a subclass thereof) if the value
         cannot be read or cannot be parsed. This includes cases where the file simply
@@ -70,7 +57,11 @@ class WhereFromAttributeReader:
         bytes_path = bytes(path)
         attribute_length = self._read_where_from_value_length(bytes_path)
         binary_value = self._read_where_from_value(bytes_path, attribute_length)
-        return self._parse_binary_where_from_value(binary_value)
+        value = self._parse_binary_where_from_value(binary_value)
+        if is_nonempty_list_of_strings(value):
+            return value
+        else:
+            raise MalformedWhereFromValue(path, value)
 
 
     def _read_where_from_value_length(self, path: bytes) -> int:
@@ -115,10 +106,9 @@ class WhereFromAttributeReader:
             return result  # type: ignore [no-any-return]  # `getxattr()` does return int
 
 
-    def _parse_binary_where_from_value(self, binary_value: bytes) -> WhereFromValue:
+    def _parse_binary_where_from_value(self, binary_value: bytes) -> object:
         """Convert the given binary “where from” value into a Python object."""
-        value = plistlib.loads(binary_value, fmt=plistlib.FMT_BINARY)
-        return value  # type: ignore [no-any-return]  # I’ve read the source code
+        return plistlib.loads(binary_value, fmt=plistlib.FMT_BINARY)
 
 
     def _get_reading_exception(

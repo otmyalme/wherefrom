@@ -2,17 +2,20 @@
 Test the error conditions that can occur in the `wherefrom.read` module.
 """
 
+from datetime import datetime
 from pathlib import Path
+from plistlib import UID
 from typing import cast
 
 import pytest
 
 from wherefrom.read import WhereFromAttributeReader
 from wherefrom.errors import (
-    CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
-    TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
-    UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
-    IOErrorReadingWhereFromValue,
+    MalformedWhereFromValue, CannotReadWhereFromValue,
+    FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
+    TooManySymlinks, UnsupportedFileName,
+    UnsupportedFileSystem, UnsupportedFileSystemObject,
+    WhereFromValueLengthMismatch, IOErrorReadingWhereFromValue,
 )
 
 
@@ -77,6 +80,35 @@ def test_read_where_from_value__errors(
     assert exception.error_name == error_name
     expected_message = f"Could not read the “were from” value of “{path}”: {message_tail}"
     assert str(exception) == expected_message
+
+
+
+# Unexpected Values ----------------------------------------------------------------------
+
+UNEXPECTED_VALUES = [
+    ("str.txt", "This is a string"),
+    ("bytes.txt", b"This is a bytes object"),
+    ("bytearray.txt", bytearray.fromhex("e29d93")),
+    ("int.txt", 23),
+    ("float.txt", 23.5),
+    ("bool.txt", True),
+    ("datetime.txt", datetime(2023, 5, 23, 23, 23, 23)),  # noqa: DTZ001  # Yes, no TZ
+    ("uid.txt", UID(23)),
+    ("none.txt", None),
+    ("list.txt", ["foo", 23, b"ar", [1, 2, 3]]),
+    ("dict.txt", {"foo": 23, "bar": [1, 2, 3]}),
+]
+
+@pytest.mark.parametrize(("file_name", "value"), UNEXPECTED_VALUES)
+def test_get_where_from_value__unexpected_values(environment, file_name, value):
+    """Are “where from” values of unexpected types read correctly?"""
+    path = environment / "unexpected" / file_name
+    with pytest.raises(MalformedWhereFromValue) as exception_information:
+        WhereFromAttributeReader().read_where_from_value(path)
+    exception = exception_information.value
+    assert exception.path == path
+    assert exception.value == value
+    assert (str(exception)) == f"Encountered a malformed “where from” value in “{path}”"
 
 
 # TESTS USING SYSTEM FILES ###############################################################

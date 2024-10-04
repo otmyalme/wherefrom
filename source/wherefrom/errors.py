@@ -5,6 +5,7 @@ The exception hierarchy is structured as follows:
 
     WhereFromException
      └─ ReadWhereFromValueError
+         ├─ MalformedWhereFromValue
          └─ CannotReadWhereFromValue
              ├─ FileHasNoWhereFromValue
              ├─ NoSuchFile
@@ -58,12 +59,23 @@ class WhereFromException(Exception):
 
 # ERRORS READING THE “WHERE FROM” VALUE ##################################################
 
-# Base Classes ---------------------------------------------------------------------------
-
 class ReadWhereFromValueError(WhereFromException):
     """Raised if an error occurs while reading or parsing a file’s “where from” value."""
     path: Path
 
+
+# UNEXPECTED VALUES
+
+class MalformedWhereFromValue(ReadWhereFromValueError):
+    """
+    Raised if a file’s “where from” value is something other than a list of strings.
+    (Empty lists also cause this error to be raised.)
+    """
+    MESSAGE = "Encountered a malformed “where from” value in “{path}”"
+    value: object
+
+
+# VALUE COULD NOT BE READ
 
 class CannotReadWhereFromValue(ReadWhereFromValueError):
     """
@@ -76,7 +88,7 @@ class CannotReadWhereFromValue(ReadWhereFromValueError):
     error_name: str
 
 
-# Common Errors --------------------------------------------------------------------------
+# Common Errors
 
 class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
     """
@@ -102,7 +114,7 @@ class FileNotReadable(CannotReadWhereFromValue, PermissionError):
     MESSAGE = "You don’t have permission to access the file"
 
 
-# Bad File Structures --------------------------------------------------------------------
+# Bad File Structures
 
 class TooManySymlinks(CannotReadWhereFromValue):
     """
@@ -137,7 +149,7 @@ class UnsupportedFileName(CannotReadWhereFromValue):
     """
 
 
-# Lack of Support ------------------------------------------------------------------------
+# Lack of Support
 
 class UnsupportedFileSystem(CannotReadWhereFromValue):
     """
@@ -163,7 +175,7 @@ class UnsupportedFileSystemObject(CannotReadWhereFromValue):
     MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
 
 
-# Internal Errors ------------------------------------------------------------------------
+# Internal Errors
 
 class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
     """
