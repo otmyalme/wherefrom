@@ -13,7 +13,8 @@ The exception hierarchy is structured as follows:
              ├─ UnsupportedFileName
              ├─ UnsupportedFileSystem
              ├─ UnsupportedFileSystemObject
-             └─ WhereFromValueLengthMismatch
+             ├─ WhereFromValueLengthMismatch
+             └─ IOErrorReadingWhereFromValue
 """
 
 from dataclasses import dataclass
@@ -178,3 +179,11 @@ class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
         Either the value has changed while it was being read, or there has been an
         unexpected internal error
     """
+
+
+class IOErrorReadingWhereFromValue(CannotReadWhereFromValue, IOError):
+    """
+    Raised if `getxattr()` encountered an I/O error while reading a file’s “where from”
+    value. The corresponding `getxattr()` error name is `EIO`.
+    """
+    MESSAGE = "An I/O error occurred"

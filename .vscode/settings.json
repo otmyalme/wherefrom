@@ -11,6 +11,7 @@
         "EACCES",
         "EFAULT",
         "EINVAL",
+        "EIO",
         "EISDIR",
         "elif",
         "ELOOP",

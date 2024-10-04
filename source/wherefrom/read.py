@@ -16,6 +16,7 @@ from wherefrom.errors import (
     CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
     TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
     UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
+    IOErrorReadingWhereFromValue,
 )
 
 
@@ -152,6 +153,7 @@ ERROR_INFORMATION = {
     13: ("EACCES", FileNotReadable),
     62: ("ELOOP", TooManySymlinks),
     14: ("EFAULT", CannotReadWhereFromValue),  # Probably cannot happen; see below
+     5: ("EIO", IOErrorReadingWhereFromValue),
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have

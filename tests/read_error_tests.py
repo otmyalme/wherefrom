@@ -12,6 +12,7 @@ from wherefrom.errors import (
     CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
     TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
     UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
+    IOErrorReadingWhereFromValue,
 )
 
 
@@ -142,6 +143,10 @@ ERROR_CODE_TESTS = [
     (
         14, CannotReadWhereFromValue, "EFAULT",
         "An unexpected error ocurred (error code 14)",
+    ),
+    (
+         5, IOErrorReadingWhereFromValue, "EIO",
+         "An I/O error occurred",
     ),
 ]
 
