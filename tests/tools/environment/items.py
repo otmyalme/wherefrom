@@ -57,15 +57,20 @@ def create_png_file(path: Path) -> None:
         file.write(TINY_PNG_BYTES)
 
 
+def create_symlink(parent_path: Path, name: str, target: Path) -> Path:
+    """Create a symlink to the given target."""
+    path = parent_path / name
+    path.symlink_to(target)
+    return path
+
+
 def create_looping_symlink(parent_path: Path, target: Path) -> Path:
     """
     Create a symbolic link to the given target with a special name that indicates that
     it’s part of a loop, and that it can be deleted by `delete_test_environment()`. It’s
     the responsibility of the caller to ensure that the symlink is part of a loop.
     """
-    path = parent_path / LOOPING_SYMLINK_NAME
-    path.symlink_to(target)
-    return path
+    return create_symlink(parent_path, LOOPING_SYMLINK_NAME, target)
 
 
 def set_where_from_value(
@@ -98,30 +103,38 @@ def delete_item(path: Path) -> None:
     """Delete the file or directory at the given path, it it appears safe to do so."""
     if path.is_dir() and not path.is_symlink():
         delete_directory(path)
-    else:
-        delete_file(path)  # The function will check whether `path` is actually a file
-
-
-def delete_file(path: Path) -> None:
-    """Delete the file at the given path, if it appears safe to do so."""
-    if is_safe_to_delete(path):
+    elif is_item_safe_to_delete(path):
         path.unlink()
     else:
-        message = f"There’s an unexpected file in the test environment: “{path}”"
+        message = f"There’s an unexpected item in the test environment: “{path}”"
         raise AssertionError(message)
 
 
-def is_safe_to_delete(path: Path) -> bool:
-    """Check whether it appears safe to delete the file at the given path."""
+def is_item_safe_to_delete(path: Path) -> bool:
+    """Check whether it appears safe to delete the file system item at the given path."""
     if path.is_symlink():
-        return path.name == LOOPING_SYMLINK_NAME
+        return is_symlink_safe_to_delete(path)
     elif path.is_file():  # Make sure `path` isn’t a mount point, or something
-        is_ds_store = (path.name == ".DS_Store")
-        is_empty = (path.stat().st_size == 0)
-        is_tiny_png = (path.suffix == ".png" and path.read_bytes() == TINY_PNG_BYTES)
-        return is_ds_store or is_empty or is_tiny_png
+        return is_file_safe_to_delete(path)
     else:  # pragma: no cover
         return False
+
+
+def is_symlink_safe_to_delete(path: Path) -> bool:
+    """Check whether it appears safe to delete the symlink at the given path."""
+    if path.name == LOOPING_SYMLINK_NAME:
+        return True
+    else:
+        target = path.readlink()
+        return target == path or not target.exists() or is_item_safe_to_delete(target)
+
+
+def is_file_safe_to_delete(path: Path) -> bool:
+    """Check whether it appears safe to delete the file at the given path."""
+    is_ds_store = (path.name == ".DS_Store")
+    is_empty = (path.stat().st_size == 0)
+    is_tiny_png = (path.suffix == ".png" and path.read_bytes() == TINY_PNG_BYTES)
+    return is_ds_store or is_empty or is_tiny_png
 
 
 # SPECIAL FILE NAMES #####################################################################

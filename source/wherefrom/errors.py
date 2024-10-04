@@ -9,9 +9,10 @@ The exception hierarchy is structured as follows:
              ├─ FileHasNoWhereFromValue
              ├─ NoSuchFile
              ├─ FileNotReadable
+             ├─ TooManySymlinks
+             ├─ UnsupportedFileName
              ├─ UnsupportedFileSystem
              ├─ UnsupportedFileSystemObject
-             ├─ UnsupportedFileName
              └─ WhereFromValueLengthMismatch
 """
 
@@ -100,6 +101,41 @@ class FileNotReadable(CannotReadWhereFromValue, PermissionError):
     MESSAGE = "You don’t have permission to access the file"
 
 
+# Bad File Structures --------------------------------------------------------------------
+
+class TooManySymlinks(CannotReadWhereFromValue):
+    """
+    Raised if more than 32 symlinks were encountered while reading the “where from” value.
+    This may or may not be due to a loop.
+
+    The corresponding `getxattr()` error name is `ELOOP`.
+    """
+    MESSAGE = "Had to traverse too many symbolic links"
+
+
+class UnsupportedFileName(CannotReadWhereFromValue):
+    """
+    Raised when reading the “where from” value of a file whose name or path is too long.
+
+    macOS limits file names to 255 bytes and paths to 1024 bytes, and this exception is
+    raised when a file’s name or path exceeds these limits.
+
+    It might not actually be possible for such a file to exist, so this could perhaps just
+    be handled using `NoSuchFile`, but the error receives a exception class of its own in
+    case it is in fact possible for such a file to exist under some circumstances (on a
+    mounted file system with different limits, maybe).
+
+    The corresponding `getxattr()` error name is `ENAMETOOLONG`.
+
+    (`getxattr()` uses the same error code if the name of the extended file attribute to
+    read exceeds 127 characters, but this application uses a single fixed attribute, so
+    there should be no chance of misdiagnosing the error code.)
+    """
+    MESSAGE = """
+        The length of the file’s name or that of it’s path exceeds the system limits
+    """
+
+
 # Lack of Support ------------------------------------------------------------------------
 
 class UnsupportedFileSystem(CannotReadWhereFromValue):
@@ -124,29 +160,6 @@ class UnsupportedFileSystemObject(CannotReadWhereFromValue):
     The corresponding `getxattr()` error names are `EPERM` and `EISDIR`.
     """
     MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
-
-
-class UnsupportedFileName(CannotReadWhereFromValue):
-    """
-    Raised when reading the “where from” value of a file whose name or path is too long.
-
-    macOS limits file names to 255 bytes and paths to 1024 bytes, and this exception is
-    raised when a file’s name or path exceeds these limits.
-
-    It might not actually be possible for such a file to exist, so this could perhaps just
-    be handled using `NoSuchFile`, but the error receives a exception class of its own in
-    case it is in fact possible for such a file to exist under some circumstances (on a
-    mounted file system with different limits, maybe).
-
-    The corresponding `getxattr()` error name is `ENAMETOOLONG`.
-
-    (`getxattr()` uses the same error code if the name of the extended file attribute to
-    read exceeds 127 characters, but this application uses a single fixed attribute, so
-    there should be no chance of misdiagnosing the error code.)
-    """
-    MESSAGE = """
-        The length of the file’s name or that of it’s path exceeds the system limits
-    """
 
 
 # Internal Errors ------------------------------------------------------------------------

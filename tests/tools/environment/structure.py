@@ -12,7 +12,8 @@ import plistlib
 
 from tests.tools import Sentinel
 from tests.tools.environment.items import (
-    create_file, create_directory, create_looping_symlink, delete_directory,
+    create_file, create_directory, create_symlink, create_looping_symlink,
+    delete_directory,
 )
 
 
@@ -45,6 +46,7 @@ def create_files_with_unexpected_values(environment_path: Path) -> None:
 def create_files_that_cause_errors(environment_path: Path) -> None:
     """Create a set of files that cause errors if there “where from” value is read."""
     errors = create_directory(environment_path, "errors")
+    create_too_many_symlinks(errors)
     # A file with no “where from” value
     create_file(errors, "no-value.html", Sentinel.NO_VALUE)
     # A file with no read permission
@@ -55,12 +57,23 @@ def create_files_that_cause_errors(environment_path: Path) -> None:
     not_readable.chmod(0o200)
 
 
+def create_too_many_symlinks(errors_path: Path) -> None:
+    """Create a chain of 33 symlinks, which is more than macOS is willing to deal with."""
+    parent = create_directory(errors_path, "too-many-symlinks")
+    target = create_file(parent, "target.html", ONE_URL)
+    for n in range(33):
+        target = create_symlink(parent, f"{n + 1}", target)
+
+
 def create_symlink_loops(environment_path: Path) -> None:
     """
     Create a set of directories that contain symlinks that would cause an endless loop
     if followed indiscriminately.
     """
     loops = create_directory(environment_path, "loops")
+    # A symlink that points to itself
+    self_loop = loops / "self-loop"
+    create_symlink(self_loop.parent, self_loop.name, self_loop)
     # A directory that (indirectly) contains a symlink to itself
     parent_loop = create_directory(loops, "parent-loop")
     intermediate = create_directory(parent_loop, "intermediate")
@@ -94,9 +107,11 @@ def delete_test_environment(path: Path) -> None:
     Delete the test environment.
 
     This function will recursively delete the contents of the given directory, but only
-    if it appears safe to do so. The function will delete `.DS_Store` files, symlinks
-    named “loop.forever”, empty files, and PNG files whose contents consist of a single
-    white pixel, but will raise an `AssertionError` if it encounters any other files.
+    if it appears safe to do so. The function will delete `.DS_Store` files, empty files,
+    PNG files whose contents consist of a single white pixel, and symlinks that are named
+    “loop.forever”, are broken, or point to themselves or a target that is safe to delete.
+
+    If any other file is encountered, the function raises `AssertionError`.
 
     If a file has its contents changed after the check whether it appears safe to delete
     it and its actual deletion, the file will still be deleted, however.

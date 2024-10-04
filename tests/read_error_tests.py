@@ -10,8 +10,8 @@ import pytest
 from wherefrom.read import WhereFromAttributeReader
 from wherefrom.errors import (
     CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
-    UnsupportedFileSystem, UnsupportedFileSystemObject, UnsupportedFileName,
-    WhereFromValueLengthMismatch,
+    TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
+    UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
 )
 
 
@@ -43,6 +43,14 @@ ERROR_TESTS = [
     (
         "errors/not-readable/one-item.html", FileNotReadable, 13, "EACCES",
         "You don’t have permission to access the file",
+    ),
+    (
+        "errors/too-many-symlinks/33", TooManySymlinks, 62, "ELOOP",
+        "Had to traverse too many symbolic links",
+    ),
+    (
+        "loops/self-loop/impossible.html", TooManySymlinks, 62, "ELOOP",
+        "Had to traverse too many symbolic links",
     ),
     (
         f"l{'o' * 256}ng-name.png", UnsupportedFileName, 63, "ENAMETOOLONG",

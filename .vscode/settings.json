@@ -12,6 +12,7 @@
         "EINVAL",
         "EISDIR",
         "elif",
+        "ELOOP",
         "ENAMETOOLONG",
         "ENOATTR",
         "ENOENT",

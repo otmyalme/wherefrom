@@ -14,8 +14,8 @@ import plistlib
 
 from wherefrom.errors import (
     CannotReadWhereFromValue, FileHasNoWhereFromValue, NoSuchFile, FileNotReadable,
-    UnsupportedFileSystem, UnsupportedFileSystemObject, UnsupportedFileName,
-    WhereFromValueLengthMismatch,
+    TooManySymlinks, UnsupportedFileName, UnsupportedFileSystem,
+    UnsupportedFileSystemObject, WhereFromValueLengthMismatch,
 )
 
 
@@ -150,6 +150,7 @@ ERROR_INFORMATION = {
     20: ("ENOTDIR", NoSuchFile),
     63: ("ENAMETOOLONG", UnsupportedFileName),
     13: ("EACCES", FileNotReadable),
+    62: ("ELOOP", TooManySymlinks),
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
