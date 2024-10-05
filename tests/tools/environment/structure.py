@@ -13,7 +13,7 @@ from tests.tools.environment.items import (
     create_file, create_directory, create_symlink, create_looping_symlink,
     delete_directory, WhereFromValue,
 )
-from tests.read.unhappy_value_tests import UNEXPECTED_WHERE_FROM_VALUE_TEST_CASES
+from tests.parse_tests import UNEXPECTED_WHERE_FROM_VALUE_TEST_CASES
 
 
 # CREATE #################################################################################

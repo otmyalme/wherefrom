@@ -4,7 +4,7 @@ Test the convenience features of the `WhereFromException` class.
 
 from dataclasses import is_dataclass
 
-from wherefrom.errors import WhereFromException
+from wherefrom.exceptions import WhereFromException
 
 
 # WHERE FROM EXCEPTION ###################################################################

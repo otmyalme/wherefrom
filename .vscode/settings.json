@@ -27,6 +27,7 @@
         "libc",
         "mypy",
         "pytest",
+        "readexceptions",
         "testpaths",
         "typeshed",
         "xattr"
@@ -35,6 +36,7 @@
         90
     ],
     "editor.unicodeHighlight.allowedCharacters": {
+        "›": true,
         "’": true
     },
     "files.exclude": {

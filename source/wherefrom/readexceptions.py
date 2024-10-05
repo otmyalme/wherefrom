@@ -1,86 +1,17 @@
 """
-Provides the exception classes used by the application.
-
-The exception hierarchy is structured as follows:
-
-    WhereFromException
-     └─ ReadWhereFromValueError
-         ├─ UnexpectedWhereFromValue
-         └─ CannotReadWhereFromValue
-             ├─ FileHasNoWhereFromValue
-             ├─ NoSuchFile
-             ├─ FileNotReadable
-             ├─ TooManySymlinks
-             ├─ UnsupportedPath
-             ├─ UnsupportedFileSystem
-             ├─ UnsupportedFileSystemObject
-             ├─ WhereFromValueLengthMismatch
-             └─ IOErrorReadingWhereFromValue
+Define the exceptions raised by `wherefrom.read`.
 """
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import ClassVar
-
-from wherefrom.tools import multiline_string_as_one_line
+from wherefrom.exceptions import ReadWhereFromValueError
 
 
 # BASE CLASS #############################################################################
 
-class WhereFromException(Exception):
-    """
-    The base class for all exceptions raised by the application.
-
-    Automatically turns all subclasses into dataclasses, and subclasses should have their
-    arguments defined as fields, so that they can be accessed in a reasonable manner.
-
-    Also, automatically constructs the exception message, by `format()`ing `MESSAGE` with
-    the object’s attributes. If `MESSAGE_PREFIX` is nonempty, it is first prepended to
-    `MESSAGE` using “: ” as a separator. This allows trees of the exception hierarchy to
-    define a common “⟨problem⟩: ⟨cause⟩” structure.
-    """
-    MESSAGE_PREFIX: ClassVar[str] = ""
-    MESSAGE: ClassVar[str] = "No error message has been provided"
-
-    def __init_subclass__(cls) -> None:
-        """Automatically turn subclasses into dataclasses and fix message whitespace."""
-        dataclass(cls)
-        cls.MESSAGE_PREFIX = multiline_string_as_one_line(cls.MESSAGE_PREFIX)
-        cls.MESSAGE = multiline_string_as_one_line(cls.MESSAGE)
-
-    def __str__(self) -> str:
-        """Construct the exception message from `MESSAGE` and `MESSAGE_PREFIX`."""
-        if self.MESSAGE_PREFIX:
-            template = f"{self.MESSAGE_PREFIX.rstrip(": ")}: {self.MESSAGE}"
-        else:
-            template = self.MESSAGE
-        return template.format(**vars(self))
-
-
-# ERRORS READING THE “WHERE FROM” VALUE ##################################################
-
-class ReadWhereFromValueError(WhereFromException):
-    """Raised if an error occurs while reading or parsing a file’s “where from” value."""
-    path: Path
-
-
-# UNEXPECTED VALUES
-
-class UnexpectedWhereFromValue(ReadWhereFromValueError):
-    """
-    Raised if a file’s “where from” value is something other than a list of strings.
-    (Empty lists also cause this error to be raised.)
-    """
-    MESSAGE = "Encountered an unexpected “where from” value in “{path}”"
-    value: object
-
-
-# VALUE COULD NOT BE READ
-
 class CannotReadWhereFromValue(ReadWhereFromValueError):
     """
-    Raised if an error occurs while reading a file’s “where from” value. For expected
-    errors, a subclass of this exception class is raised instead.
+    The base class of all exceptions that are raised if an error occurs while reading a
+    file’s binary “where from” value. In case of an unexpected error, the class itself
+    is raised.
     """
     MESSAGE_PREFIX = "Could not read the “were from” value of “{path}”"
     MESSAGE = "An unexpected error ocurred (error code {error_code})"
@@ -88,7 +19,7 @@ class CannotReadWhereFromValue(ReadWhereFromValueError):
     error_name: str
 
 
-# Common Errors
+# NORMAL ERRORS ##########################################################################
 
 class FileHasNoWhereFromValue(CannotReadWhereFromValue, KeyError):
     """
@@ -114,7 +45,7 @@ class FileNotReadable(CannotReadWhereFromValue, PermissionError):
     MESSAGE = "You don’t have permission to access the file"
 
 
-# Bad File Structures
+# BAD FILE STRUCTURES ####################################################################
 
 class TooManySymlinks(CannotReadWhereFromValue):
     """
@@ -149,7 +80,7 @@ class UnsupportedPath(CannotReadWhereFromValue):
     """
 
 
-# Lack of Support
+# LACK OF SUPPORT ########################################################################
 
 class UnsupportedFileSystem(CannotReadWhereFromValue):
     """
@@ -175,7 +106,7 @@ class UnsupportedFileSystemObject(CannotReadWhereFromValue):
     MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
 
 
-# Internal Errors
+# INTERNAL ERRORS ########################################################################
 
 class WhereFromValueLengthMismatch(CannotReadWhereFromValue):
     """
