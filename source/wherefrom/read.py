@@ -19,9 +19,9 @@ def read_binary_where_from_value(path: Path) -> bytes:
     """
     Read the binary “where from” value of the given file.
 
-    The function raises `CannotReadWhereFromValue` (or a subclass thereof) if the value
+    The function raises `WhereFromValueReadingError` (or a subclass thereof) if the value
     cannot be read. This includes cases where the file simply doesn’t have a “where
-    from” value. In those cases, the `FileHasNoWhereFromValue` subclass is raised.
+    from” value. In those cases, the `NoWhereFromValue` subclass is raised.
     """
     path_bytes = bytes(path)
     attribute_length = _read_where_from_value_length(path_bytes)
@@ -109,7 +109,7 @@ def _load_library() -> ctypes.CDLL:
 
 # ERROR HANDLING #########################################################################
 
-def _get_reading_exception(path: bytes, error_code: int) -> CannotReadWhereFromValue:
+def _get_reading_exception(path: bytes, error_code: int) -> WhereFromValueReadingError:
     """Get an exception to throw for `getxattr()` errors with the given code."""
     proper_path = Path(path.decode("utf8", errors="replace"))
     default = DEFAULT_ERROR_INFORMATION
@@ -124,26 +124,26 @@ def _get_reading_exception(path: bytes, error_code: int) -> CannotReadWhereFromV
 # the mapping of error codes to names.
 ERROR_INFORMATION = {
     # Undocumented codes
-     2: ("ENOENT", NoSuchFile),
+     2: ("ENOENT", MissingFile),
     # Documented codes in the order they appear on the `getxattr` manpage
-    93: ("ENOATTR", FileHasNoWhereFromValue),
+    93: ("ENOATTR", NoWhereFromValue),
     45: ("ENOTSUP", UnsupportedFileSystem),
     34: ("ERANGE", WhereFromValueLengthMismatch),
      1: ("EPERM", UnsupportedFileSystemObject),
-    22: ("EINVAL", CannotReadWhereFromValue),  # Cannot happen; see below
+    22: ("EINVAL", WhereFromValueReadingError),  # Cannot happen; see below
     21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
-    20: ("ENOTDIR", NoSuchFile),
+    20: ("ENOTDIR", MissingFile),
     63: ("ENAMETOOLONG", UnsupportedPath),
-    13: ("EACCES", FileNotReadable),
+    13: ("EACCES", NoReadPermission),
     62: ("ELOOP", TooManySymlinks),
-    14: ("EFAULT", CannotReadWhereFromValue),  # Probably cannot happen; see below
+    14: ("EFAULT", WhereFromValueReadingError),  # Probably cannot happen; see below
      5: ("EIO", IOErrorReadingWhereFromValue),
 }
 
 # `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
 # been passed to `getxattr()`. That shouldn’t be possible, since the application only
 # uses a single attribute name, and doesn’t use any options. Accordingly, there is no
-# specific `CannotReadWhereFromValue` subclass for this case.
+# specific `WhereFromValueReadingError` subclass for this case.
 #
 # `EISDIR` is, according to the manpage, similar to `EPERM`, and is used if the path isn’t
 # a regular file, but the attribute in question can only be used for files. It’s not clear
@@ -156,4 +156,4 @@ ERROR_INFORMATION = {
 
 
 # The error information to use if the error code is missing from `ERROR_INFORMATION`.
-DEFAULT_ERROR_INFORMATION = ("UNKNOWN", CannotReadWhereFromValue)
+DEFAULT_ERROR_INFORMATION = ("UNKNOWN", WhereFromValueReadingError)

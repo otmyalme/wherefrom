@@ -8,7 +8,7 @@ from pathlib import Path
 import plistlib
 
 from wherefrom.tools import is_nonempty_list_of_strings
-from wherefrom.exceptions import ReadWhereFromValueError
+from wherefrom.exceptions import WhereFromValueError
 
 
 # PUBLIC FUNCTIONS #######################################################################
@@ -36,7 +36,7 @@ def _parse_binary_where_from_value(binary_value: bytes) -> object:
 
 # EXCEPTION CLASSES ######################################################################
 
-class UnexpectedWhereFromValue(ReadWhereFromValueError):
+class UnexpectedWhereFromValue(WhereFromValueError):
     """
     Raised if a “where from” value is something other than a list of one or more strings.
     """

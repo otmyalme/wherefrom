@@ -104,25 +104,25 @@ FILE_TEST_CASE_PARAMETERS = (
 FILE_TEST_CASES = [
     # The file has no “where from” value
     (
-        "errors/no-value.html", FileHasNoWhereFromValue, 93, "ENOATTR",
+        "errors/no-value.html", NoWhereFromValue, 93, "ENOATTR",
         "The file doesn’t have the value set",
     ),
     # The file doesn’t exist
     (
-        "errors/no-such-file.png", NoSuchFile, 2, "ENOENT",
+        "errors/no-such-file.png", MissingFile, 2, "ENOENT",
         "The file doesn’t exist",
     ),
     (
-        "errors/no-value.html/impossible.png", NoSuchFile, 20, "ENOTDIR",
+        "errors/no-value.html/impossible.png", MissingFile, 20, "ENOTDIR",
         "The file doesn’t exist",
     ),
     # The file cannot be read
     (
-        "errors/not-readable.html", FileNotReadable, 13, "EACCES",
+        "errors/not-readable.html", NoReadPermission, 13, "EACCES",
         "You don’t have permission to access the file",
     ),
     (
-        "errors/not-readable/one-item.html", FileNotReadable, 13, "EACCES",
+        "errors/not-readable/one-item.html", NoReadPermission, 13, "EACCES",
         "You don’t have permission to access the file",
     ),
     # There are too many symlinks to follow
@@ -162,17 +162,17 @@ ERROR_CODE_TESTS = [
         IOErrorReadingWhereFromValue, 5, "EIO",
         "An I/O error occurred",
     ),
-    # Errors codes that raise `CannotReadWhereFromValue`
+    # Errors codes that raise `WhereFromValueReadingError`
     (
-        CannotReadWhereFromValue, 22, "EINVAL",
+        WhereFromValueReadingError, 22, "EINVAL",
         "An unexpected error ocurred (error code 22)",
     ),
     (
-        CannotReadWhereFromValue, 14, "EFAULT",
+        WhereFromValueReadingError, 14, "EFAULT",
         "An unexpected error ocurred (error code 14)",
     ),
     (
-        CannotReadWhereFromValue, -1, "UNKNOWN",
+        WhereFromValueReadingError, -1, "UNKNOWN",
         "An unexpected error ocurred (error code -1)",
     ),
 ]
@@ -184,7 +184,7 @@ ERROR_CODE_TESTS = [
 def test_read_where_from_value__errors(
     environment: Path,
     file_name: str,
-    exception_class: type[CannotReadWhereFromValue],
+    exception_class: type[WhereFromValueReadingError],
     error_code: int,
     error_name: str,
     message_tail: str,
@@ -204,7 +204,7 @@ def test_read_where_from_value__errors(
 
 @pytest.mark.parametrize(ERROR_CODE_TEST_PARAMETERS, ERROR_CODE_TESTS)
 def test_private_get_reading_exception(
-    exception_class: type[CannotReadWhereFromValue],
+    exception_class: type[WhereFromValueReadingError],
     error_code: int,
     error_name: str,
     message_tail: str,

@@ -4,11 +4,11 @@ Provides base classes for the exceptions used by the application.
 The exception hierarchy is structured as follows:
 
     WhereFromException
-     └─ ReadWhereFromValueError
-         ├─ CannotReadWhereFromValue
-         │   ├─ FileHasNoWhereFromValue
-         │   ├─ NoSuchFile
-         │   ├─ FileNotReadable
+     └─ WhereFromValueError
+         ├─ WhereFromValueReadingError
+         │   ├─ NoWhereFromValue
+         │   ├─ MissingFile
+         │   ├─ NoReadPermission
          │   ├─ TooManySymlinks
          │   ├─ UnsupportedPath
          │   ├─ UnsupportedFileSystem
@@ -57,8 +57,11 @@ class WhereFromException(Exception):
         return template.format(**vars(self))
 
 
-# ERRORS READING THE “WHERE FROM” VALUE ##################################################
+# BASE CLASSES FOR SUB-HIERARCHIES #######################################################
 
-class ReadWhereFromValueError(WhereFromException):
-    """Raised if an error occurs while reading or parsing a file’s “where from” value."""
+class WhereFromValueError(WhereFromException):
+    """
+    A base class for exceptions related to the “where from” value and its reading and
+    parsing.
+    """
     path: Path
