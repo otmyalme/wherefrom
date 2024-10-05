@@ -15,7 +15,9 @@ from plistlib import UID
 import pytest
 
 from wherefrom.read import read_binary_where_from_value
-from wherefrom.parse import parse_binary_where_from_value, UnexpectedWhereFromValue
+from wherefrom.parse import (
+    parse_binary_where_from_value, MalformedWhereFromValue, UnexpectedWhereFromValue,
+)
 
 from tests.tools.environment.items import WhereFromValue
 
@@ -36,6 +38,20 @@ def test_parse_binary_where_from_value__two_items(environment: Path):
     binary_value = read_binary_where_from_value(path)
     value = parse_binary_where_from_value(binary_value, path)
     assert value == ["http://nowhere.test/banner.png", "http://nowhere.test/index.html"]
+
+
+# UNPARSABLE VALUES ######################################################################
+
+def test_parse_binary_where_from_value__unparsable():
+    """Is the appropriate exception raised if the binary value cannot be parsed?"""
+    binary_value = b"this is not a binary property list"
+    path = Path("/Users/no-one/nowhere/simulated-file.png")
+    with pytest.raises(MalformedWhereFromValue) as exception_information:
+        parse_binary_where_from_value(binary_value, path)
+    exception = exception_information.value
+    assert exception.path == path
+    assert exception.binary_value == binary_value
+    assert str(exception) == f"Encountered a malformed “where from” value in “{path}”"
 
 
 # UNEXPECTED VALUES ######################################################################

@@ -15,7 +15,9 @@ The exception hierarchy is structured as follows:
          │   ├─ UnsupportedFileSystemObject
          │   ├─ WhereFromValueLengthMismatch
          │   └─ IOErrorReadingWhereFromValue
-         └─ UnexpectedWhereFromValue
+         └─ WhereFromValueValueError
+             ├─ MalformedWhereFromValue
+             └─ UnexpectedWhereFromValue
 """
 
 from dataclasses import dataclass
@@ -60,8 +62,5 @@ class WhereFromException(Exception):
 # BASE CLASSES FOR SUB-HIERARCHIES #######################################################
 
 class WhereFromValueError(WhereFromException):
-    """
-    A base class for exceptions related to the “where from” value and its reading and
-    parsing.
-    """
+    """A base class for exceptions related to a file’s “where from” value."""
     path: Path
