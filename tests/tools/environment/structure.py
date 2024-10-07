@@ -32,6 +32,7 @@ def create_simple_files(environment_path: Path) -> None:
     directory = create_directory(environment_path, "simple")
     create_file(directory, "one-item.html", ONE_URL)
     create_file(directory, "two-items.png", TWO_URLS)
+    create_file(directory, "unicode-name\N{HEAVY EXCLAMATION MARK SYMBOL}.html", ONE_URL)
     create_directory(directory, "directory-with-where-from-value", ONE_URL)
 
 
@@ -47,8 +48,9 @@ def create_files_that_cause_errors(environment_path: Path) -> None:
     """Create a set of files that cause errors if there “where from” value is read."""
     errors = create_directory(environment_path, "errors")
     create_too_many_symlinks(errors)
-    # A file with no “where from” value
+    # Two files with no “where from” value
     create_file(errors, "no-value.html", Sentinel.NO_VALUE)
+    create_file(errors, "no-value-\N{CROSS MARK}.html", Sentinel.NO_VALUE)
     # A file with no read permission
     create_file(errors, "not-readable.html", ONE_URL).chmod(0o200)
     # A file in a directory with no read or search permission

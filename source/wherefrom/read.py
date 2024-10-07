@@ -9,6 +9,7 @@ by `man getxattr`.
 from collections.abc import Callable
 import ctypes
 import ctypes.util
+import os
 from pathlib import Path
 
 from wherefrom.readexceptions import *
@@ -129,7 +130,7 @@ def _load_external_getxattr_function() -> GetXAttrFunction:
 
 def _get_reading_exception(path: bytes, error_code: int) -> WhereFromValueReadingError:
     """Get an exception to throw for `getxattr()` errors with the given code."""
-    proper_path = Path(path.decode("utf8", errors="replace"))
+    proper_path = Path(os.fsdecode(path))
     default = DEFAULT_ERROR_INFORMATION
     error_name, exception_class = ERROR_INFORMATION.get(error_code, default)
     return exception_class(proper_path, error_code, error_name)

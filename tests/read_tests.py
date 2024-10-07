@@ -102,6 +102,14 @@ def test_read_where_from_value__directory(environment: Path):
     assert b"http://nowhere.test/index.html" in binary_value
 
 
+def test_read_where_from_value__unicode_name(environment: Path):
+    """What if the file’s name contains Unicode?"""
+    path = environment / "simple" / "unicode-name\N{HEAVY EXCLAMATION MARK SYMBOL}.html"
+    binary_value = read_binary_where_from_value(path)
+    assert binary_value.startswith(b"bplist00")
+    assert b"http://nowhere.test/index.html" in binary_value
+
+
 # ERROR CONDITIONS › INDIVIDUAL TESTS ####################################################
 
 def test_read_where_from_value__unsupported_file_system_object():
@@ -134,6 +142,10 @@ FILE_TEST_CASES = [
     # The file has no “where from” value
     (
         "errors/no-value.html", NoWhereFromValue, 93, "ENOATTR",
+        "The file doesn’t have the value set",
+    ),
+    (
+        "errors/no-value-\N{CROSS MARK}.html", NoWhereFromValue, 93, "ENOATTR",
         "The file doesn’t have the value set",
     ),
     # The file doesn’t exist
