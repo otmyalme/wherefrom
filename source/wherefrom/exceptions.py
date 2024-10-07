@@ -17,7 +17,9 @@ The exception hierarchy is structured as follows:
          │   ├─ UnsupportedFileSystem
          │   ├─ UnsupportedFileSystemObject
          │   ├─ WhereFromValueLengthMismatch
-         │   └─ IOErrorReadingWhereFromValue
+         │   ├─ IOErrorReadingWhereFromValue
+         │   └─ UnexpectedErrorReadingWhereFromValue
+         │       └─ UnknownErrorReadingWhereFromValue
          └─ WhereFromValueValueError
              ├─ MalformedWhereFromValue
              └─ UnexpectedWhereFromValue

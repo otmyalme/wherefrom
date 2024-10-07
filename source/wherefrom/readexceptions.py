@@ -43,7 +43,6 @@ class WhereFromValueReadingError(WhereFromValueError):
     is raised.
     """
     MESSAGE_PREFIX = "Could not read the “were from” value of “{path}”"
-    MESSAGE = "An unexpected error ocurred (error code {error_code})"
     error_code: int
     error_name: str
 
@@ -159,3 +158,21 @@ class IOErrorReadingWhereFromValue(WhereFromValueReadingError, IOError):
     value. The corresponding `getxattr()` error name is `EIO`.
     """
     MESSAGE = "An I/O error occurred"
+
+
+# GETXATTR() ERRORS › UNEXPECTED ERROR ###################################################
+
+class UnexpectedErrorReadingWhereFromValue(WhereFromValueReadingError):
+    """
+    Raised if an error that shouldn’t be possible occurs while reading the “where from”
+    value.
+    """
+    MESSAGE = "An unexpected error ocurred ({error_name})"
+
+
+class UnknownErrorReadingWhereFromValue(UnexpectedErrorReadingWhereFromValue):
+    """
+    Raised if an error with an error code that isn’t documented on `getxattr()`’s manpage
+    occurs while reading the “where from” value.
+    """
+    MESSAGE = "An unknown error ocurred (error code {error_code})"

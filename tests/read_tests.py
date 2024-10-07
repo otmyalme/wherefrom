@@ -190,7 +190,7 @@ ERROR_CODE_TEST_PARAMETERS = (
 # Would the application raise the given exception class if `getxattr()` were to signal
 # an error with the given code? Would it use the given error name and message tail?
 ERROR_CODE_TESTS = [
-    # Error codes that raise a custom exception class
+    # Expected errors
     (
         UnsupportedFileSystem, 45, "ENOTSUP",
         "The file system doesn’t support extended file attributes",
@@ -203,18 +203,18 @@ ERROR_CODE_TESTS = [
         IOErrorReadingWhereFromValue, 5, "EIO",
         "An I/O error occurred",
     ),
-    # Errors codes that raise `WhereFromValueReadingError`
+    # Unexpected Errors
     (
-        WhereFromValueReadingError, 22, "EINVAL",
-        "An unexpected error ocurred (error code 22)",
+        UnexpectedErrorReadingWhereFromValue, 22, "EINVAL",
+        "An unexpected error ocurred (EINVAL)",
     ),
     (
-        WhereFromValueReadingError, 14, "EFAULT",
-        "An unexpected error ocurred (error code 14)",
+        UnexpectedErrorReadingWhereFromValue, 14, "EFAULT",
+        "An unexpected error ocurred (EFAULT)",
     ),
     (
-        WhereFromValueReadingError, -1, "UNKNOWN",
-        "An unexpected error ocurred (error code -1)",
+        UnknownErrorReadingWhereFromValue, -1, "UNKNOWN",
+        "An unknown error ocurred (error code -1)",
     ),
 ]
 
