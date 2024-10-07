@@ -6,6 +6,7 @@ The attribute is read by using `ctypes` to call the C function `getxattr()` from
 by `man getxattr`.
 """
 
+from collections.abc import Callable
 import ctypes
 import ctypes.util
 from pathlib import Path
@@ -59,7 +60,7 @@ def _read_where_from_value(path: bytes, length: int) -> bytes:
     return buffer.raw
 
 
-# LIBRARY CALLS ##########################################################################
+# CALLING THE EXTERNAL C FUNCTION ########################################################
 
 # The full name of the “where from” attribute as a bytes object, for optimization.
 WHERE_FROM_ATTRIBUTE_NAME_BYTES = WHERE_FROM_ATTRIBUTE_NAME.encode("ascii")
@@ -74,8 +75,8 @@ def _call_getxattr(path: bytes, buffer: Buffer | None = None) -> int:
     a buffer, to determine the necessary length for the buffer, and then with a buffer
     of the appropriate length.
     """
-    library = LIBRARY or _load_library()
-    result = library.getxattr(
+    function = external_getxattr_function or _load_external_getxattr_function()
+    result = function(
         path,
         WHERE_FROM_ATTRIBUTE_NAME_BYTES,
         buffer,
@@ -86,28 +87,45 @@ def _call_getxattr(path: bytes, buffer: Buffer | None = None) -> int:
     if result < 0:
         raise _get_reading_exception(path, ctypes.get_errno())
     else:
-        return result  # type: ignore [no-any-return]  # `getxattr()` does return int
+        return result
 
 
-# THE C LIBRARY ##########################################################################
+# LOADING THE EXTERNAL C LIBRARY #########################################################
 
-# The name of the C library that provides the necessary functionality for reading the
-# “where from“ attribute.
-LIBRARY_NAME = "libc"
+# The type of the external C function used to read “where from” values.
+type GetXAttrFunction = Callable[[bytes, bytes, Buffer | None, int, int, int], int]
 
-# The C library itself.
-LIBRARY: ctypes.CDLL | None = None
+# The name of the external C library that provides that function.
+EXTERNAL_C_LIBRARY_NAME = "libc"
 
+# The name of that function.
+EXTERNAL_GETXATTR_FUNCTION_NAME = "getxattr"
 
-def _load_library() -> ctypes.CDLL:
-    """Load the C library that reads the “where from” value."""
-    global LIBRARY
-    if not LIBRARY:
-        LIBRARY = ctypes.CDLL(ctypes.util.find_library(LIBRARY_NAME), use_errno=True)
-    return LIBRARY
+# The function itself.
+external_getxattr_function: GetXAttrFunction | None = None
 
 
-# ERROR HANDLING #########################################################################
+def _load_external_getxattr_function() -> GetXAttrFunction:
+    """Load the external C function that reads the “where from” value."""
+    global external_getxattr_function
+    if not external_getxattr_function:
+        try:
+            library_name = EXTERNAL_C_LIBRARY_NAME
+            # `path_name = None` would work, too (at least on my machine)
+            path_name = ctypes.util.find_library(library_name)
+            library = ctypes.CDLL(path_name, use_errno=True)
+        except OSError as e:
+            raise MissingExternalLibrary(library_name) from e
+        else:
+            function_name = EXTERNAL_GETXATTR_FUNCTION_NAME
+            try:
+                external_getxattr_function = getattr(library, function_name)
+            except AttributeError as e:
+                raise MissingExternalLibraryFunction(library_name, function_name) from e
+    return external_getxattr_function
+
+
+# HANDLING ERRORS ########################################################################
 
 def _get_reading_exception(path: bytes, error_code: int) -> WhereFromValueReadingError:
     """Get an exception to throw for `getxattr()` errors with the given code."""
@@ -122,6 +140,8 @@ def _get_reading_exception(path: bytes, error_code: int) -> WhereFromValueReadin
 #
 # See https://github.com/apple-open-source/macos/blob/master/xnu/bsd/sys/errno.h for
 # the mapping of error codes to names.
+#
+# See the docstrings of the exception classes for details about the errors.
 ERROR_INFORMATION = {
     # Undocumented codes
      2: ("ENOENT", MissingFile),

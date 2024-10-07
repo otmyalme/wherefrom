@@ -2,14 +2,43 @@
 Define the exceptions raised by `wherefrom.read`.
 """
 
-from wherefrom.exceptions import WhereFromValueError
+from wherefrom.exceptions import WhereFromException, WhereFromValueError
 
 
-# BASE CLASS #############################################################################
+# MISSING C FUNCTIONALITY ################################################################
+
+class MissingExternalDependencyError(WhereFromException):
+    """
+    The base class for exceptions that are raised if an external dependency is missing.
+    """
+
+
+class MissingExternalLibrary(MissingExternalDependencyError):
+    """
+    Raised if the external C library needed to read the “where from” value can’t be found.
+    """
+    MESSAGE = "Could not load the external library “{library_name}”"
+    library_name: str
+
+
+class MissingExternalLibraryFunction(MissingExternalDependencyError):
+    """
+    Raised if the external C library doesn’t have the function required to read “where
+    from” values.
+    """
+    MESSAGE = """
+        The external library “{library_name}” doesn’t have a function named
+        “{function_name}”
+    """
+    library_name: str
+    function_name: str
+
+
+# GETXATTR() ERRORS › BASE CLASS #########################################################
 
 class WhereFromValueReadingError(WhereFromValueError):
     """
-    The base class of all exceptions that are raised if an error occurs while reading a
+    The base class for exceptions that are raised if an error occurs while reading a
     file’s binary “where from” value. In case of an unexpected error, the class itself
     is raised.
     """
@@ -19,7 +48,7 @@ class WhereFromValueReadingError(WhereFromValueError):
     error_name: str
 
 
-# NORMAL ERRORS ##########################################################################
+# GETXATTR() ERRORS › NORMAL ERRORS ######################################################
 
 class NoWhereFromValue(WhereFromValueReadingError, KeyError):
     """
@@ -45,7 +74,7 @@ class NoReadPermission(WhereFromValueReadingError, PermissionError):
     MESSAGE = "You don’t have permission to access the file"
 
 
-# BAD FILE STRUCTURES ####################################################################
+# GETXATTR() ERRORS › BAD FILE STRUCTURES ################################################
 
 class TooManySymlinks(WhereFromValueReadingError):
     """
@@ -80,7 +109,7 @@ class UnsupportedPath(WhereFromValueReadingError):
     """
 
 
-# LACK OF SUPPORT ########################################################################
+# GETXATTR() ERRORS › LACK OF SUPPORT ####################################################
 
 class UnsupportedFileSystem(WhereFromValueReadingError):
     """
@@ -106,7 +135,7 @@ class UnsupportedFileSystemObject(WhereFromValueReadingError):
     MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
 
 
-# INTERNAL ERRORS ########################################################################
+# GETXATTR() ERRORS › INTERNAL ERRORS ####################################################
 
 class WhereFromValueLengthMismatch(WhereFromValueReadingError):
     """

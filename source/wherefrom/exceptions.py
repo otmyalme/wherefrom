@@ -4,6 +4,9 @@ Provides base classes for the exceptions used by the application.
 The exception hierarchy is structured as follows:
 
     WhereFromException
+     ├─ MissingExternalDependencyError
+     │   ├─ MissingExternalLibrary
+     │   └─ MissingExternalLibraryFunction
      └─ WhereFromValueError
          ├─ WhereFromValueReadingError
          │   ├─ NoWhereFromValue

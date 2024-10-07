@@ -44,7 +44,7 @@ def _parse_binary_where_from_value(binary_value: bytes, path: Path) -> object:
 
 class WhereFromValueValueError(WhereFromValueError):
     """
-    The base class of all exceptions that are raised if there is something wrong with the
+    The base class of exceptions that are raised if there is something wrong with the
     “where from” value itself.
     """
 

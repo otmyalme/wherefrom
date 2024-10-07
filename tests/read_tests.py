@@ -4,15 +4,49 @@ Test the happy paths of the `wherefrom.read` module.
 Errors are tested by `tests.read_error_tests`, not by this module.
 """
 
+import ctypes.util
 from pathlib import Path
 
 import pytest
 
+import wherefrom.read
 from wherefrom.read import (
     read_binary_where_from_value, _read_where_from_value_length, _read_where_from_value,
-    _get_reading_exception, _load_library,
+    _get_reading_exception, _load_external_getxattr_function,
 )
 from wherefrom.readexceptions import *
+
+
+# LOADING THE EXTERNAL C FUNCTION ########################################################
+
+def test__load_external_getxattr_function__repeatedly():
+    """Do repeated `_load_external_getxattr_function()` calls return the same object?"""
+    assert _load_external_getxattr_function() is _load_external_getxattr_function()
+
+
+def test__load_external_getxattr_function__no_libc(monkeypatch):
+    """Is the appropriate exception raised if `libc` cannot be found?"""
+    monkeypatch.setattr(wherefrom.read, "external_getxattr_function", None)
+    monkeypatch.setattr(ctypes.util, "find_library", lambda _: "/no/such/path")
+    with pytest.raises(MissingExternalLibrary) as exception_information:
+        _load_external_getxattr_function()
+    exception = exception_information.value
+    assert exception.library_name == "libc"
+    assert str(exception) == "Could not load the external library “libc”"
+
+
+def test__load_external_getxattr_function__no_getxattr_function(monkeypatch):
+    """Is the appropriate exception raised if the `getxattr()` function is missing?"""
+    monkeypatch.setattr(wherefrom.read, "external_getxattr_function", None)
+    monkeypatch.setattr(wherefrom.read, "EXTERNAL_GETXATTR_FUNCTION_NAME", "no_such_name")
+    with pytest.raises(MissingExternalLibraryFunction) as exception_information:
+        _load_external_getxattr_function()
+    exception = exception_information.value
+    assert exception.library_name == "libc"
+    assert exception.function_name == "no_such_name"
+    assert str(exception) == (
+        "The external library “libc” doesn’t have a function named “no_such_name”"
+    )
 
 
 # PRIVATE FUNCTIONS ######################################################################
@@ -45,11 +79,6 @@ def test__read_where_from_value__buffer_too_small(environment: Path):
         f"Could not read the “were from” value of “{path}”: Either the value has changed "
         "while it was being read, or there has been an unexpected internal error"
     )
-
-
-def test__load_library__repeatedly():
-    """Is the same object returned if `_load_library()` is called repeatedly?"""
-    assert _load_library() is _load_library()
 
 
 # HAPPY PATHS ############################################################################
