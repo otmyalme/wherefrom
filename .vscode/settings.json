@@ -5,13 +5,40 @@
     ],
     "cSpell.words": [
         "addopts",
+        "APFS",
+        "confusables",
         "docstrings",
+        "EACCES",
+        "EFAULT",
+        "EINVAL",
+        "EIO",
+        "EISDIR",
+        "elif",
+        "ELOOP",
+        "ENAMETOOLONG",
+        "ENOATTR",
+        "ENOENT",
+        "ENOTDIR",
+        "ENOTSUP",
+        "EPERM",
+        "ERANGE",
+        "froms",
+        "getxattr",
+        "libc",
         "mypy",
-        "pytest"
+        "pytest",
+        "readexceptions",
+        "testpaths",
+        "typeshed",
+        "xattr"
     ],
     "editor.rulers": [
         90
     ],
+    "editor.unicodeHighlight.allowedCharacters": {
+        "›": true,
+        "’": true
+    },
     "files.exclude": {
         "**/__pycache__": true,
         ".mypy_cache": true,

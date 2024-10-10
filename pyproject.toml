@@ -20,13 +20,25 @@ directory = "artifacts"
 packages = ["source/wherefrom"]
 
 
+# TEST BASE ENVIRONMENT ##################################################################
+
+# Dependencies that are actually imported by the tests need to be installed in both the
+# `test` and `type-check` environment. To avoid having to specify the dependencies twice,
+# both environments inherit from this one.
+[tool.hatch.envs.test-base]
+description = "The template for test and type-check"
+dependencies = [
+    "pytest"
+]
+
+
 # TESTING ################################################################################
 
 [tool.hatch.envs.test]
+template = "test-base"
 description = "Run the unit tests"
-dependencies = [
+extra-dependencies = [
     "coverage",
-    "pytest",
 ]
 
 [tool.hatch.envs.test.scripts]
@@ -39,7 +51,8 @@ erase-coverage-data = "coverage erase"
 
 [tool.pytest.ini_options]
 addopts = "--no-header"
-python_files = ["*_tests.py"]
+testpaths = ["tests"]
+python_files = ["*_tests.py", "tests.py"]
 
 [tool.coverage.run]
 source = ["source", "tests"]
@@ -65,9 +78,10 @@ cov-report = ""
 # TYPE-CHECKING ##########################################################################
 
 [tool.hatch.envs.type-check]
+template = "test-base"
 description = "Run the type checker"
-detached = true
-dependencies = [
+skip-install = true
+extra-dependencies = [
     "mypy",
 ]
 
@@ -78,6 +92,7 @@ run-type-checks = "mypy {args}"
 [tool.mypy]
 files = ["source", "tests"]
 strict = true
+enable_incomplete_feature = ["NewGenericSyntax"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -105,15 +120,44 @@ line-length = 90
 select = ["ALL"]
 preview = true
 ignore = [
-    "ANN",  # Missing type annotations; that’s mypy’s job
-    "CPY",  # Missing copyright notices; the project doesn’t currently use any
-    "D",    # Missing docstrings; enable that when there’s actually something to document
+    "ANN",      # Missing type annotations; that’s mypy’s job
+    "CPY",      # Missing copyright notices; the project doesn’t currently use any
+    "D200",     # Docstring that would fit into one line; not wanted for module docstrings
+    "D203",     # No empty line before class docstrings; that’s not the project’s style
+    "D204",     # No empty line after class docstring; that’s sometimes okay
+    "D205",     # No empty line after first docstring line; long summaries may be good
+    "D212",     # Docstring starts on a new line; the project prefers to do it that way
+    "D400",     # Missing punctuation in comments, allegedly; has false positives for “.)”
+    "D415",     # ditto
+    "DOC",      # Missing docstring items; the project doesn’t use that docstring format
+    "E302",     # Not enough empty lines; one empty line may be enough in some cases
+    "F403",     # Star imports; those are sometimes appropriate
+    "F405",     # Names from star imports; those are sometimes appropriate
+    "I",        # Unsorted imports; the linter’s sort order is often nonsensical
+    "N818",     # Exception classes without an “Error” suffix; Not the project’s style
+    "PLW0603",  # Use of `global`; yes, that stinks, but it’s sometimes inevitable
+    "RET505",   # elif after return statement; that makes the logic easier to read
+    "RET506",   # else after return statement; ditto
+    "RUF022",   # Unsorted `__all__`; as per “I”
+    "TD",       # Invalid TODO tag; TODOs are already forbidden by FIX
+]
+allowed-confusables = [
+    "›",  # U+200D SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    "’",  # U+2019 RIGHT SINGLE QUOTATION MARK
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-    "S101",  # Allow assert statements in tests
+    "D400",     # Allow the first docstring line to end with a question mark in test files
+    "PLC2701",  # Allow private imports in test files
+    "PLR0913",  # Allow lots of arguments in tests
+    "PLR0917",  # Allow lots of positional arguments in tests
+    "PLR2004",  # Allow magic values in tests
+    "S101",     # Allow assert statements in tests
+    "S404",     # Allow use of the `subprocess` module
+    "S603",     # Don’t be suspicious of `subprocess.run` calls just in case
 ]
+
 
 [tool.hatch.envs.hatch-static-analysis.scripts]
 # Don’t use Hatch’s build-in formatting and linting setup. The application uses its own
