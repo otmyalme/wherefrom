@@ -9,13 +9,15 @@ from wherefrom.exceptions import WhereFromException, WhereFromValueError
 
 class MissingExternalDependencyError(WhereFromException):
     """
-    The base class for exceptions that are raised if an external dependency is missing.
+    The base class for exceptions that are raised if an external dependency can’t be
+    found.
     """
 
 
 class MissingExternalLibrary(MissingExternalDependencyError):
     """
-    Raised if the external C library needed to read the “where from” value can’t be found.
+    Raised if the external C library needed to read files’ “where from” values can’t be
+    loaded.
     """
     MESSAGE = "Could not load the external library “{library_name}”"
     library_name: str
@@ -23,8 +25,8 @@ class MissingExternalLibrary(MissingExternalDependencyError):
 
 class MissingExternalLibraryFunction(MissingExternalDependencyError):
     """
-    Raised if the external C library doesn’t have the function required to read “where
-    from” values.
+    Raised if loading the external C library needed to read files’ “where from” values
+    loads a library that doesn’t include the required function.
     """
     MESSAGE = """
         The external library “{library_name}” doesn’t have a function named
@@ -39,8 +41,7 @@ class MissingExternalLibraryFunction(MissingExternalDependencyError):
 class WhereFromValueReadingError(WhereFromValueError):
     """
     The base class for exceptions that are raised if an error occurs while reading a
-    file’s binary “where from” value. In case of an unexpected error, the class itself
-    is raised.
+    file’s binary “where from” value.
     """
     MESSAGE_PREFIX = "Could not read the “were from” value of “{path}”"
     error_code: int
@@ -59,7 +60,7 @@ class NoWhereFromValue(WhereFromValueReadingError, KeyError):
 
 class MissingFile(WhereFromValueReadingError, FileNotFoundError):
     """
-    Raised when reading the “where from” value of a file that does not exist.
+    Raised when reading the “where from” value of a file that doesn’t exist.
     The corresponding `getxattr()` error names are `ENOENT` and `ENOTDIR`.
     """
     MESSAGE = "The file doesn’t exist"
@@ -67,7 +68,7 @@ class MissingFile(WhereFromValueReadingError, FileNotFoundError):
 
 class NoReadPermission(WhereFromValueReadingError, PermissionError):
     """
-    Raised when reading the “where from” value of a file that cannot be read.
+    Raised when reading the “where from” value of a file that can’t be read.
     The corresponding `getxattr()` error name is `EACCES`.
     """
     MESSAGE = "You don’t have permission to access the file"
@@ -77,8 +78,8 @@ class NoReadPermission(WhereFromValueReadingError, PermissionError):
 
 class TooManySymlinks(WhereFromValueReadingError):
     """
-    Raised if more than 32 symlinks were encountered while reading the “where from” value.
-    This may or may not be due to a loop.
+    Raised if more than 32 symlinks were encountered while reading a file’s “where from”
+    value. This may or may not be due to a loop.
 
     The corresponding `getxattr()` error name is `ELOOP`.
     """
@@ -87,15 +88,15 @@ class TooManySymlinks(WhereFromValueReadingError):
 
 class UnsupportedPath(WhereFromValueReadingError):
     """
-    Raised when reading the “where from” value of a file whose name or path is too long.
+    Raised when reading the “where from” value of a file whose path exceeds the system’s
+    length limits.
 
-    macOS limits file names to 255 bytes and paths to 1024 bytes, and this exception is
-    raised when a file’s name or path exceeds these limits.
+    macOS limits paths to 1024 bytes and individual path components to 255 bytes.
 
-    It might not actually be possible for such a file to exist, so this could perhaps just
-    be handled using `MissingFile`, but the error receives a exception class of its own in
-    case it is in fact possible for such a file to exist under some circumstances (on a
-    mounted file system with different limits, maybe).
+    It’s most likely not actually be possible for a file that causes this exception to
+    exist, so this could perhaps be handled using `MissingFile`, but the error receives
+    an exception class of its own just in case such a file can, in fact, exist under some
+    circumstances (on a mounted file system with different limits, perhaps).
 
     The corresponding `getxattr()` error name is `ENAMETOOLONG`.
 
@@ -104,7 +105,8 @@ class UnsupportedPath(WhereFromValueReadingError):
     there should be no chance of misdiagnosing the error code.)
     """
     MESSAGE = """
-        The length of the file’s name or that of it’s path exceeds the system limits
+        The length of the file’s path or of one of its components exceeds the system
+        limits
     """
 
 
@@ -112,7 +114,8 @@ class UnsupportedPath(WhereFromValueReadingError):
 
 class UnsupportedFileSystem(WhereFromValueReadingError):
     """
-    Raised if the file system doesn’t support extended file attributes.
+    Raised when reading the “where from” value of a file on a file system that doesn’t
+    support extended file attributes.
 
     This hasn’t, so far, been tested on an actual file. Experiments involving FAT and
     ExFAT disk images created by macOS and the internal memory of an ancient digital
@@ -125,31 +128,28 @@ class UnsupportedFileSystem(WhereFromValueReadingError):
 
 class UnsupportedFileSystemObject(WhereFromValueReadingError):
     """
-    Raised when reading the “where from” attribute of a file system object that doesn’t
-    support the attribute (or extended attributes in general). `/dev/null` qualifies, but
-    it’s not clear what the exact rules are.
+    Raised when reading the “where from” value of a file system object that doesn’t
+    support the attribute (or extended attributes in general). `/dev/null` qualifies,
+    but it’s not clear what the exact rules are.
 
-    The corresponding `getxattr()` error names are `EPERM` and `EISDIR`.
+    The corresponding `getxattr()` error names are `EPERM` and `EISDIR`. (Directories
+    *do* support the attribute, however, notwithstanding the second error name.)
     """
-    MESSAGE = "That type of file system object doesn’t support the “where from” attribute"
+    MESSAGE = "That type of file system object doesn’t support the attribute"
 
 
 # GETXATTR() ERRORS › INTERNAL ERRORS ####################################################
 
 class WhereFromValueLengthMismatch(WhereFromValueReadingError):
     """
-    Raised if the buffer passed to `_read_where_from_value()` is too small to hold the
-    “where from” value. A different process may have changed the file’s “where from”
-    value in the time between the call to `_read_where_from_value_length()` and the call
-    to `_read_where_from_value_length()`, or there may be a bug in this application, or
-    maybe even in `getxattr()`.
+    Raised if the buffer passed to `_read_binary_where_from_value()` is too small to hold
+    the given file’s “where from” value. A different process may have changed the “where
+    from” value in the time between the call to `_read_binary_where_from_value_length()`
+    and the call to `_read_binary_where_from_value()`.
 
     The corresponding `getxattr()` error name is `ERANGE`.
     """
-    MESSAGE = """
-        Either the value has changed while it was being read, or there has been an
-        unexpected internal error
-    """
+    MESSAGE = "The value may have changed while it was being read"
 
 
 class IOErrorReadingWhereFromValue(WhereFromValueReadingError, IOError):
@@ -164,8 +164,12 @@ class IOErrorReadingWhereFromValue(WhereFromValueReadingError, IOError):
 
 class UnexpectedErrorReadingWhereFromValue(WhereFromValueReadingError):
     """
-    Raised if an error that shouldn’t be possible occurs while reading the “where from”
-    value.
+    Raised if an unexpected error occurs while reading a file’s “where from” value.
+
+    The class itself is raised for errors that are documented on `getxattr()`’s manpage,
+    but are thought to be impossible given the way the application uses the function.
+    If `getxattr()` signals an error that isn’t documented on the manpage, the subclass
+    `UnknownErrorReadingWhereFromValue` is raised, instead.
     """
     MESSAGE = "An unexpected error ocurred ({error_name})"
 
@@ -173,6 +177,6 @@ class UnexpectedErrorReadingWhereFromValue(WhereFromValueReadingError):
 class UnknownErrorReadingWhereFromValue(UnexpectedErrorReadingWhereFromValue):
     """
     Raised if an error with an error code that isn’t documented on `getxattr()`’s manpage
-    occurs while reading the “where from” value.
+    occurs while reading a file’s “where from” value.
     """
     MESSAGE = "An unknown error ocurred (error code {error_code})"

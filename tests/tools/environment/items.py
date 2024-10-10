@@ -41,7 +41,10 @@ def create_directory(
     name: str,
     where_from_value: OptionalWhereFromValue = Sentinel.NO_VALUE,
 ) -> Path:
-    """Create a directory with the given name at the given path and return its path."""
+    """
+    Create a directory with the given name at the given path and return its path.
+    Optionally, set its “where from” value using the `xattr` command-line tool.
+    """
     path = parent_path / name
     path.mkdir()
     set_where_from_value(path, where_from_value)
@@ -56,7 +59,8 @@ def create_file(
     """
     Create a file with the given name at the given path and return its path.
 
-    The file’s “where from” attribute is set to the given value using `xattr`.
+    The file’s “where from” attribute is set to the given value using `xattr` command-line
+    tool.
 
     If `name` ends with “.png”, an actual PNG file consisting of a single white pixel is
     created, so that VS Code doesn’t display an error message when the developer views it.
@@ -87,7 +91,7 @@ def create_looping_symlink(parent_path: Path, target: Path) -> Path:
     """
     Create a symbolic link to the given target with a special name that indicates that
     it’s part of a loop, and that it can be deleted by `delete_test_environment()`. It’s
-    the responsibility of the caller to ensure that the symlink is part of a loop.
+    the caller’s responsibility to ensure that the symlink actually is part of a loop.
     """
     return create_symlink(parent_path, LOOPING_SYMLINK_NAME, target)
 
@@ -96,7 +100,8 @@ def set_where_from_value(path: Path, value: OptionalWhereFromValue) -> None:
     """Set the “where from” attribute of the file at the given path to the given value."""
     if value is not Sentinel.NO_VALUE:
         fmt = plistlib.FMT_BINARY
-        binary_value = plistlib.dumps(value, fmt=fmt)  # type: ignore [arg-type]
+        # The type annotation for `plistlib.dumps()` in `typeshed` is wrong.
+        binary_value = plistlib.dumps(value, fmt=fmt)  # type: ignore [arg-type]  # Above
         hexadecimal_value = binary_value.hex()
         # Use `xattr` to set the value rather than using `ctypes` in the tests, too.
         # “-wx” means “write a value that’s provided in hexadecimal”.
@@ -108,6 +113,9 @@ def set_where_from_value(path: Path, value: OptionalWhereFromValue) -> None:
 
 def delete_directory(path: Path) -> None:
     """Recursively delete the directory at the given path, if it appears safe to do so."""
+    # This function will (presumably) fail with a `RecursionError` if the given directory
+    # contains subdirectories that are nested about 500 levels deep, but this isn’t worth
+    # fixing since the test environment is known not to contain such subdirectories.
     if path.stat().st_mode & 0o777 == 0o200:
         path.chmod(0o700)  # Make any unreadable directories that were created readable
     for child_path in path.iterdir():

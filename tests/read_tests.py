@@ -11,7 +11,8 @@ import pytest
 
 import wherefrom.read
 from wherefrom.read import (
-    read_binary_where_from_value, _read_where_from_value_length, _read_where_from_value,
+    read_binary_where_from_value,
+    _read_binary_where_from_value_length, _read_binary_where_from_value,
     _get_reading_exception, _load_external_getxattr_function,
 )
 from wherefrom.readexceptions import *
@@ -25,7 +26,7 @@ def test__load_external_getxattr_function__repeatedly():
 
 
 def test__load_external_getxattr_function__no_libc(monkeypatch):
-    """Is the appropriate exception raised if `libc` cannot be found?"""
+    """Is the appropriate exception raised if `libc` can’t be found?"""
     monkeypatch.setattr(wherefrom.read, "external_getxattr_function", None)
     monkeypatch.setattr(ctypes.util, "find_library", lambda _: "/no/such/path")
     with pytest.raises(MissingExternalLibrary) as exception_information:
@@ -51,33 +52,33 @@ def test__load_external_getxattr_function__no_getxattr_function(monkeypatch):
 
 # PRIVATE FUNCTIONS ######################################################################
 
-def test__read_where_from_value_length(environment: Path):
-    """Does `_read_where_from_value_length()` return the expected length?"""
+def test__read_binary_where_from_value_length(environment: Path):
+    """Does `_read_binary_where_from_value_length()` return the expected length?"""
     path = environment / "simple" / "one-item.html"
-    length = _read_where_from_value_length(bytes(path))
+    length = _read_binary_where_from_value_length(bytes(path))
     assert length == 77
 
 
-def test__read_where_from_value__happy(environment: Path):
-    """Does `_read_where_from_value()` return the expected binary value?"""
+def test__read_binary_where_from_value__happy(environment: Path):
+    """Does `_read_binary_where_from_value()` return the expected binary value?"""
     path = environment / "simple" / "one-item.html"
-    binary_value = _read_where_from_value(bytes(path), 77)
+    binary_value = _read_binary_where_from_value(bytes(path), 77)
     assert binary_value.startswith(b"bplist00")
     assert b"http://nowhere.test/index.html" in binary_value
 
 
-def test__read_where_from_value__buffer_too_small(environment: Path):
-    """Does `_read_where_from_value()` handle a buffer that’s too small for the value?"""
+def test__read_binary_where_from_value__buffer_too_small(environment: Path):
+    """Does the function handle a buffer that’s too small for the value?"""
     path = environment / "simple" / "one-item.html"
     with pytest.raises(WhereFromValueLengthMismatch) as exception_information:
-        _read_where_from_value(bytes(path), 7)
+        _read_binary_where_from_value(bytes(path), 7)
     exception = exception_information.value
     assert exception.path == path
     assert exception.error_code == 34
     assert exception.error_name == "ERANGE"
     assert str(exception) == (
-        f"Could not read the “were from” value of “{path}”: Either the value has changed "
-        "while it was being read, or there has been an unexpected internal error"
+        f"Could not read the “were from” value of “{path}”: The value may have changed "
+        "while it was being read"
     )
 
 
@@ -86,7 +87,7 @@ def test__read_where_from_value__buffer_too_small(environment: Path):
 # `read_binary_where_from_value()` receives further testing as an inevitable but welcome
 # part of the tests for the `wherefrom.parse` module.
 
-def test_read_where_from_value__happy(environment: Path):
+def test_read_binary_where_from_value__happy(environment: Path):
     """Does `read_binary_where_from_value()` return the expected binary value?"""
     path = environment / "simple" / "one-item.html"
     binary_value = read_binary_where_from_value(path)
@@ -94,7 +95,7 @@ def test_read_where_from_value__happy(environment: Path):
     assert b"http://nowhere.test/index.html" in binary_value
 
 
-def test_read_where_from_value__directory(environment: Path):
+def test_read_binary_where_from_value__directory(environment: Path):
     """What if the file is actually a directory?"""
     path = environment / "simple" / "directory-with-where-from-value"
     binary_value = read_binary_where_from_value(path)
@@ -102,9 +103,9 @@ def test_read_where_from_value__directory(environment: Path):
     assert b"http://nowhere.test/index.html" in binary_value
 
 
-def test_read_where_from_value__unicode_name(environment: Path):
+def test_read_binary_where_from_value__unicode_name(environment: Path):
     """What if the file’s name contains Unicode?"""
-    path = environment / "simple" / "unicode-name\N{HEAVY EXCLAMATION MARK SYMBOL}.html"
+    path = environment / "simple" / "one-item\N{HEAVY EXCLAMATION MARK SYMBOL}.html"
     binary_value = read_binary_where_from_value(path)
     assert binary_value.startswith(b"bplist00")
     assert b"http://nowhere.test/index.html" in binary_value
@@ -112,7 +113,7 @@ def test_read_where_from_value__unicode_name(environment: Path):
 
 # ERROR CONDITIONS › INDIVIDUAL TESTS ####################################################
 
-def test_read_where_from_value__unsupported_file_system_object():
+def test_read_binary_where_from_value__unsupported_file_system_object():
     """
     Does the function raise `UnsupportedFileSystemObject` when it’s supposed to?
     This can be provoked by trying to read the “where from” attribute of `/dev/null`.
@@ -126,7 +127,7 @@ def test_read_where_from_value__unsupported_file_system_object():
     assert exception.error_name == "EPERM"
     assert str(exception) == (
         "Could not read the “were from” value of “/dev/null”: That type of file system "
-        "object doesn’t support the “where from” attribute"
+        "object doesn’t support the attribute"
     )
 
 
@@ -178,7 +179,8 @@ FILE_TEST_CASES = [
     # The path violates the macOS size restrictions
     (
         f"l{'o' * 256}ng-name.png", UnsupportedPath, 63, "ENAMETOOLONG",
-        "The length of the file’s name or that of it’s path exceeds the system limits",
+        "The length of the file’s path or of one of its components exceeds the system "
+        "limits",
     ),
 ]
 
@@ -197,7 +199,7 @@ ERROR_CODE_TESTS = [
     ),
     (
         UnsupportedFileSystemObject, 21, "EISDIR",
-        "That type of file system object doesn’t support the “where from” attribute",
+        "That type of file system object doesn’t support the attribute",
     ),
     (
         IOErrorReadingWhereFromValue, 5, "EIO",
@@ -222,7 +224,7 @@ ERROR_CODE_TESTS = [
 # ERROR CONDITIONS › PARAMETRIZED TESTS › TEST FUNCTIONS #################################
 
 @pytest.mark.parametrize(FILE_TEST_CASE_PARAMETERS, FILE_TEST_CASES)
-def test_read_where_from_value__errors(
+def test_read_binary_where_from_value__errors(
     environment: Path,
     file_name: str,
     exception_class: type[WhereFromValueReadingError],
@@ -244,7 +246,7 @@ def test_read_where_from_value__errors(
 
 
 @pytest.mark.parametrize(ERROR_CODE_TEST_PARAMETERS, ERROR_CODE_TESTS)
-def test_private_get_reading_exception(
+def test__get_reading_exception(
     exception_class: type[WhereFromValueReadingError],
     error_code: int,
     error_name: str,

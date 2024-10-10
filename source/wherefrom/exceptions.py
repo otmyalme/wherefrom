@@ -1,7 +1,7 @@
 """
 Provides base classes for the exceptions used by the application.
 
-The exception hierarchy is structured as follows:
+The application’s exception hierarchy is structured as follows:
 
     WhereFromException
      ├─ MissingExternalDependencyError
@@ -38,13 +38,17 @@ class WhereFromException(Exception):
     """
     The base class for all exceptions raised by the application.
 
-    Automatically turns all subclasses into dataclasses, and subclasses should have their
-    arguments defined as fields, so that they can be accessed in a reasonable manner.
+    Automatically turns all subclasses into dataclasses, so that error information can be
+    accessed in a reasonable manner. Subclasses must define their arguments as fields.
 
     Also, automatically constructs the exception message, by `format()`ing `MESSAGE` with
     the object’s attributes. If `MESSAGE_PREFIX` is nonempty, it is first prepended to
-    `MESSAGE` using “: ” as a separator. This allows trees of the exception hierarchy to
-    define a common “⟨problem⟩: ⟨cause⟩” structure.
+    `MESSAGE` using “: ” as a separator. This allows subtrees of the exception hierarchy
+    to define a common “⟨problem⟩: ⟨cause⟩” structure.
+
+    Whitespace in `MESSAGE` and `MESSAGE_PREFIX` is automatically normalized: Line breaks
+    and all surrounding whitespace is replaced with a single space, and all leading and
+    trailing whitespace is removed. Multi-line exception messages aren’t supported.
     """
     MESSAGE_PREFIX: ClassVar[str] = ""
     MESSAGE: ClassVar[str] = "No error message has been provided"

@@ -7,8 +7,8 @@ docstring for details.
 
 The functions makes every effort to ensure they don’t overwrite or delete any important
 files; files that are written to are opened for exclusive creation, and files are only
-deleted if they are either empty, or are PNG files consisting of a single white pixel.
-The logic used to implement these safeguards is subject to race conditions, however.
+deleted if it appears safe to do so. See the documentation of `delete_test_environment()`
+for the criteria it uses to determine this.
 
 (Note that Git doesn’t store files’ extended attributes, so it wouldn’t be possible to
 just manually create the files once and keep them in the repository.)

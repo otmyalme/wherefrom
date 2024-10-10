@@ -32,7 +32,7 @@ def create_simple_files(environment_path: Path) -> None:
     directory = create_directory(environment_path, "simple")
     create_file(directory, "one-item.html", ONE_URL)
     create_file(directory, "two-items.png", TWO_URLS)
-    create_file(directory, "unicode-name\N{HEAVY EXCLAMATION MARK SYMBOL}.html", ONE_URL)
+    create_file(directory, "one-item\N{HEAVY EXCLAMATION MARK SYMBOL}.html", ONE_URL)
     create_directory(directory, "directory-with-where-from-value", ONE_URL)
 
 
@@ -60,7 +60,7 @@ def create_files_that_cause_errors(environment_path: Path) -> None:
 
 
 def create_too_many_symlinks(errors_path: Path) -> None:
-    """Create a chain of 33 symlinks, which is more than macOS is willing to deal with."""
+    """Create a chain of 33 symlinks, which is more than macOS is willing to follow."""
     parent = create_directory(errors_path, "too-many-symlinks")
     target = create_file(parent, "target.html", ONE_URL)
     for n in range(33):

@@ -7,7 +7,7 @@ from dataclasses import is_dataclass
 from wherefrom.exceptions import WhereFromException
 
 
-# WHERE FROM EXCEPTION ###################################################################
+# SUBCLASSES FOR USE IN THE TESTS ########################################################
 
 class ExampleException(WhereFromException):
     """An example `WhereFromException` subclass for use in the tests."""
@@ -36,9 +36,12 @@ class ExampleExceptionWithPrefixSubclass(ExampleExceptionWithPrefix):
     c: int
 
 
+# THE TESTS ##############################################################################
+
 def test_where_from_exception__subclasses_are_dataclasses():
     """Are subclasses of `WhereFromException` dataclasses?"""
     assert is_dataclass(ExampleException)
+    assert is_dataclass(ExampleExceptionWithPrefixSubclass)
 
 
 def test_where_from_exception__attribute_access():

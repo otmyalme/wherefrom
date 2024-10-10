@@ -1,9 +1,9 @@
 """
 Read the binary value of the “where from” extended file attribute.
 
-The attribute is read by using `ctypes` to call the C function `getxattr()` from the
-`libc` library provided as part of macOS. Documentation for that function is provided
-by `man getxattr`.
+The value is read by using Python’s `ctypes` module to call the C function `getxattr()`
+from the `libc` library provided as part of macOS. Documentation for that function is
+available through `man getxattr`.
 """
 
 from collections.abc import Callable
@@ -11,6 +11,7 @@ import ctypes
 import ctypes.util
 import os
 from pathlib import Path
+from typing import cast
 
 from wherefrom.readexceptions import *
 
@@ -21,13 +22,14 @@ def read_binary_where_from_value(path: Path) -> bytes:
     """
     Read the binary “where from” value of the given file.
 
-    The function raises `WhereFromValueReadingError` (or a subclass thereof) if the value
-    cannot be read. This includes cases where the file simply doesn’t have a “where
-    from” value. In those cases, the `NoWhereFromValue` subclass is raised.
+    If the file doesn’t have a “where from” value, `NoWhereFromValue` is raised.
+
+    If another error occurs, a subclass of `MissingExternalDependencyError` or another
+    `WhereFromValueReadingError` is raised.
     """
-    path_bytes = bytes(path)
-    attribute_length = _read_where_from_value_length(path_bytes)
-    return _read_where_from_value(path_bytes, attribute_length)
+    path_bytes = os.fsencode(path)
+    attribute_length = _read_binary_where_from_value_length(path_bytes)
+    return _read_binary_where_from_value(path_bytes, attribute_length)
 
 
 # PUBLIC DATA ############################################################################
@@ -42,19 +44,19 @@ WHERE_FROM_ATTRIBUTE_NAME = "com.apple.metadata:kMDItemWhereFroms"
 type Buffer = ctypes.Array[ctypes.c_char]
 
 
-def _read_where_from_value_length(path: bytes) -> int:
+def _read_binary_where_from_value_length(path: bytes) -> int:
     """
     Read the length of the “where from” attribute in bytes. This is required to call
-    `_read_where_from_value()`.
+    `_read_binary_where_from_value()`.
     """
     return _call_getxattr(path)
 
 
-def _read_where_from_value(path: bytes, length: int) -> bytes:
+def _read_binary_where_from_value(path: bytes, length: int) -> bytes:
     """
     Read the value of the “where from” attribute of the given file. `length` is the
     length of the attribute’s value in bytes, which should be obtained by calling
-    `_read_where_from_value_length()`.
+    `_read_binary_where_from_value_length()`.
     """
     buffer = ctypes.create_string_buffer(length)
     _call_getxattr(path, buffer)
@@ -76,14 +78,14 @@ def _call_getxattr(path: bytes, buffer: Buffer | None = None) -> int:
     a buffer, to determine the necessary length for the buffer, and then with a buffer
     of the appropriate length.
     """
-    function = external_getxattr_function or _load_external_getxattr_function()
-    result = function(
+    getxattr = external_getxattr_function or _load_external_getxattr_function()
+    result = getxattr(
         path,
         WHERE_FROM_ATTRIBUTE_NAME_BYTES,
         buffer,
-        buffer._length_ if buffer else 0,  # the number of bytes to write to `buffer`
-        0,  # an offset within the attribute; it’s not clear what that is used for
-        0,  # options; can be used to avoid following symbolic links
+        buffer._length_ if buffer else 0,  # The number of bytes to write to `buffer`
+        0,  # An offset within the attribute; it’s not clear what that is used for
+        0,  # Options; can be used to avoid following symbolic links
     )
     if result < 0:
         raise _get_reading_exception(path, ctypes.get_errno())
@@ -110,20 +112,28 @@ def _load_external_getxattr_function() -> GetXAttrFunction:
     """Load the external C function that reads the “where from” value."""
     global external_getxattr_function
     if not external_getxattr_function:
-        try:
-            library_name = EXTERNAL_C_LIBRARY_NAME
-            # `path_name = None` would work, too (at least on my machine)
-            path_name = ctypes.util.find_library(library_name)
-            library = ctypes.CDLL(path_name, use_errno=True)
-        except OSError as e:
-            raise MissingExternalLibrary(library_name) from e
-        else:
-            function_name = EXTERNAL_GETXATTR_FUNCTION_NAME
-            try:
-                external_getxattr_function = getattr(library, function_name)
-            except AttributeError as e:
-                raise MissingExternalLibraryFunction(library_name, function_name) from e
+        library = _load_external_c_library()
+        external_getxattr_function = _get_external_getxattr_function(library)
     return external_getxattr_function
+
+
+def _load_external_c_library() -> ctypes.CDLL:
+    """Load the external C library."""
+    # `path_str = None` would work, too (at least on my machine).
+    path_str = ctypes.util.find_library(EXTERNAL_C_LIBRARY_NAME)
+    try:
+        return ctypes.CDLL(path_str, use_errno=True)
+    except OSError:
+        raise MissingExternalLibrary(EXTERNAL_C_LIBRARY_NAME) from None
+
+
+def _get_external_getxattr_function(library: ctypes.CDLL) -> GetXAttrFunction:
+    """Get the external `getxattr()` function from the library. Check its presence."""
+    try:
+        return cast(GetXAttrFunction, getattr(library, EXTERNAL_GETXATTR_FUNCTION_NAME))
+    except AttributeError:
+        names = (EXTERNAL_C_LIBRARY_NAME, EXTERNAL_GETXATTR_FUNCTION_NAME)
+        raise MissingExternalLibraryFunction(*names) from None
 
 
 # HANDLING ERRORS ########################################################################

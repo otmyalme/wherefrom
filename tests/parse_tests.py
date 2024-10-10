@@ -51,7 +51,7 @@ def test_parse_binary_where_from_value__unparsable():
     exception = exception_information.value
     assert exception.path == path
     assert exception.binary_value == binary_value
-    assert str(exception) == f"Encountered a malformed “where from” value in “{path}”"
+    assert str(exception) == f"The “where from” value of “{path}” is malformed"
 
 
 # UNEXPECTED VALUES ######################################################################
@@ -88,5 +88,5 @@ def test_parse_binary_where_from_value__unexpected_values(environment, file_name
     assert exception.value == value
     assert type(exception.value) is type(value)
     assert str(exception) == (
-        f"Encountered an unexpected “where from” value in “{path}”"
+        f"The “where from” value of “{path}” doesn’t have the expected form"
     )

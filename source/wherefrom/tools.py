@@ -8,7 +8,6 @@ from typing import TypeGuard
 
 LINE_BREAK_PATTERN = re.compile(r"\s*\n\s*")
 
-
 def multiline_string_as_one_line(string: str) -> str:
     """
     Replace line breaks and all surrounding whitespace in the given string with a single
@@ -22,6 +21,11 @@ def multiline_string_as_one_line(string: str) -> str:
     return LINE_BREAK_PATTERN.sub(" ", string.strip())
 
 
-def is_nonempty_list_of_strings(o: object) -> TypeGuard[list[str]]:
+def is_nonempty_list_of_strings(value: object) -> TypeGuard[list[str]]:
     """Check whether the given object is a list of strings with at least one element."""
-    return isinstance(o, list) and bool(o) and all(isinstance(e, str) for e in o)
+    return is_list_of_strings(value) and bool(value)
+
+
+def is_list_of_strings(value: object) -> TypeGuard[list[str]]:
+    """Check whether the given object is a list of strings."""
+    return isinstance(value, list) and all(isinstance(element, str) for element in value)
