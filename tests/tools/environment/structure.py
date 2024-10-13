@@ -34,6 +34,10 @@ def create_simple_files(environment_path: Path) -> None:
     create_file(directory, "two-items.png", TWO_URLS)
     create_file(directory, "one-item\N{HEAVY EXCLAMATION MARK SYMBOL}.html", ONE_URL)
     create_directory(directory, "directory-with-where-from-value", ONE_URL)
+    subdirectory = create_directory(directory, "subdirectory")
+    create_file(subdirectory, "one-item.html", ONE_URL)
+    sub_subdirectory = create_directory(subdirectory, "sub-subdirectory")
+    create_file(sub_subdirectory, "one-item.html", ONE_URL)
 
 
 def create_files_with_unexpected_values(environment_path: Path) -> None:

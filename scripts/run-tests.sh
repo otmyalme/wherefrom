@@ -24,7 +24,7 @@ while [ "$1" ]; do
     case "$1" in
         --skip-tests) RUN_TESTS=false;;
         --skip-report) PRINT_COVERAGE_REPORT=false;;
-        --verbose) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS --verbose";;
+        --verbose) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS -vv";;
         *) echo "Unknown argument: $1"; exit -1;;
     esac
     shift

@@ -28,7 +28,8 @@ packages = ["source/wherefrom"]
 [tool.hatch.envs.test-base]
 description = "The template for test and type-check"
 dependencies = [
-    "pytest"
+    "pytest",
+    "pytest-timeout",
 ]
 
 
