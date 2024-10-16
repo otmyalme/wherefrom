@@ -118,7 +118,7 @@ def delete_directory(path: Path) -> None:
     # fixing since the test environment is known not to contain such subdirectories.
     if path.stat().st_mode & 0o777 == 0o200:
         path.chmod(0o700)  # Make any unreadable directories that were created readable
-    for child_path in path.iterdir():
+    for child_path in sorted(path.iterdir()):
         delete_item(child_path)
     path.rmdir()  # This would fail if the path still had contents
 

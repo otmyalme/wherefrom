@@ -28,19 +28,29 @@ type WalkResults = tuple[PathsAndWhereFromValues, WalkErrors]
 
 # PUBLIC FUNCTIONS #######################################################################
 
-def walk_directory_tree(base_path: Path) -> WalkResults:
+def walk_directory_trees(base_paths: list[Path]) -> WalkResults:
     """
     Recursively gather the “where from” values of all files system objects other than
-    directories in a directory tree rooted at the given path.
+    directories in the directory trees rooted at the given base paths.
+
+    If a symbolic link to a directory is found in a base path, the link isn’t followed;
+    the function attempts to read its “where from” value, instead. However, if a base path
+    itself is a symbolic link to a directory, it *is* followed.
+
+    If a given base path points to a file system object other than a directory or a
+    symbolic link to a directory, its “where from” value is gathered as if it had been
+    found in a directory.
 
     The function ignores errors causes by file system objects that don’t have a “where
     from” value or disappear before the value can be read. All other errors are gathered
     into a list of exception classes that is returned as part of the function’s results.
     (Unlike the “where from” values, the errors are not returned as tuples that contain
     the path, but `WhereFromValueError` instances have a `path` attribute.)
+
+    The recursion into subdirectories doesn’t involve recursive function calls.
     """
-    state = WalkState(base_path)
-    _process_pending_directories(state)
+    state = WalkState(base_paths)
+    _process_base_paths(state)
     return (state.paths_and_values, state.exceptions)
 
 
@@ -50,14 +60,10 @@ def walk_directory_tree(base_path: Path) -> WalkResults:
 class WalkState:
     """Store the state and results of a walk operation."""
 
-    base_path: Path
+    base_paths: list[Path]
     pending_directory_paths: deque[Path] = field(default_factory=deque)
     paths_and_values: PathsAndWhereFromValues = field(default_factory=list)
     exceptions: WalkErrors = field(default_factory=list)
-
-    def __post_init__(self) -> None:
-        """Add the base path to `pending_directory_paths`."""
-        self.pending_directory_paths.append(self.base_path)
 
     def add_value(self, path: Path, where_from_value: list[str]) -> None:
         """Add a path and “where from” value to the walk results."""
@@ -70,21 +76,34 @@ class WalkState:
 
 # PROCESSING #############################################################################
 
-def _process_pending_directories(state: WalkState) -> None:
-    """
-    Process all pending directories of the given state. This will probably involve adding
-    more pending directories to the state, but these are processed as well, leaving no
-    pending directories.
-    """
+def _process_base_paths(state: WalkState) -> None:
+    """Recursively process all base paths of the given state."""
+    for base_path in state.base_paths:
+        _process_base_path(base_path, state)
+
+
+def _process_base_path(base_path: Path, state: WalkState) -> None:
+    """Recursively process the given base path of the given state."""
+    if base_path.is_dir():  # Includes symlinks to directories
+        _process_directory_tree(base_path, state)
+    else:
+        _process_where_from_candidate(base_path, state)
+
+
+def _process_directory_tree(path: Path, state: WalkState) -> None:
+    """Recursively process the given directory."""
+    state.pending_directory_paths.append(path)
     while state.pending_directory_paths:
         _process_directory(state.pending_directory_paths.popleft(), state)
 
 
 def _process_directory(path: Path, state: WalkState) -> None:
     """
-    Add any subdirectories in the given directory to the pending directory paths of the
-    given state. Add the “where from” value of all other file system object (or the error
-    raised when attempting to read it, if relevant) to the state’s result.
+    Process the given directory, but do not recurse into subdirectories.
+
+    Add the subdirectories of the given directory to the pending directory paths of
+    the given state. Add the “where from” values of all other file system objects (or
+    any relevant exceptions raised when attempting to read them) to the state’s result.
     """
     subdirectory_paths, candidate_paths = _gather_directory_contents(path)
     _sort_sibling_paths(subdirectory_paths)
@@ -100,14 +119,14 @@ def _gather_directory_contents(path: Path) -> tuple[list[Path], list[Path]]:
     Symbolic links to directories count as “other”.
     """
     subdirectory_paths = []
-    other_paths = []
+    candidate_paths = []
     for entry in os.scandir(path):
         entry_path = Path(entry.path)
         if _safe_is_real_directory(entry):
             subdirectory_paths.append(entry_path)
         else:
-            other_paths.append(entry_path)
-    return subdirectory_paths, other_paths
+            candidate_paths.append(entry_path)
+    return subdirectory_paths, candidate_paths
 
 
 def _process_where_from_candidate(path: Path, state: WalkState) -> None:
@@ -131,7 +150,7 @@ def _process_where_from_candidate(path: Path, state: WalkState) -> None:
 
 def _safe_is_real_directory(entry: os.DirEntry[str]) -> bool:
     """
-    Check whether the given `DirEntry` is a directory (but not a symbolic link to one).
+    Check whether the given `DirEntry` represents a directory (but not a symlink to one).
     This usually doesn’t require a system call, but if it does and there is an error,
     the function returns False.
     """

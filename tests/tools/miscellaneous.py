@@ -26,4 +26,4 @@ def get_developer_visible_temporary_directory() -> Path:
 # absence of a real value, but None isn’t suitable for the purpose because it is possible
 # to use it as a real value. The values are implemented as enums items because those are
 # allowed in a `Literal` annotation.
-Sentinel = Enum("Sentinel", "NO_VALUE")
+Sentinel = Enum("Sentinel", ["NO_VALUE"])
