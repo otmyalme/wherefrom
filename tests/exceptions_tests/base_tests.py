@@ -3,7 +3,9 @@ Test the `wherefrom.exceptions.base` module.
 """
 
 from dataclasses import is_dataclass
+import re
 
+import wherefrom.exceptions.base as module
 from wherefrom.exceptions.base import WhereFromException
 
 
@@ -58,3 +60,14 @@ def test_where_from_exception__string_representation():
     assert str(ExampleException("test")) == "An example error occurred: “test”"
     assert str(ExampleExceptionWithPrefix(1, 2)) == "Prefix (1): Message (2)"
     assert str(ExampleExceptionWithPrefixSubclass(1, 2, 3)) == "Prefix (1): Message (2+3)"
+
+
+def test_all_exceptions_in_hierarchy():
+    """Is the exception hierarchy in `wherefrom.exceptions.base`’s docstring complete?"""
+    pending = [WhereFromException]
+    while pending:
+        cls = pending.pop()
+        if not cls.__module__.startswith("tests."):
+            pattern = re.compile(rf"\b{cls.__name__}\b")
+            assert pattern.search(module.__doc__)
+            pending.extend(cls.__subclasses__())

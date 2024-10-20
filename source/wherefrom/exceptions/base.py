@@ -5,6 +5,7 @@ The application’s exception hierarchy is structured as follows:
 
     WhereFromException
      ├─ ExistingRegistration
+     │   ├─ ExistingOperationRegistration
      │   ├─ ExistingErrorNameRegistration
      │   └─ ExistingExceptionClassRegistration
      ├─ FileError
