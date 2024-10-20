@@ -6,13 +6,121 @@ from pathlib import Path
 
 import pytest
 
-from wherefrom.walk import walk_directory_trees, WalkState
-from wherefrom.exceptions.file import MissingFile, NoReadPermission, TooManySymlinks
+from wherefrom.walk import (
+    walk_directory_trees, WalkState, _process_directory, _process_where_from_candidate,
+)
+from wherefrom.exceptions.file import (
+    NoReadPermission, TooManySymlinks, ConcurrentlyReplacedDirectory,
+)
 
 from tests.tools.environment.structure import ONE_URL, TWO_URLS
 
 
-# TESTS ##################################################################################
+# LOW-LEVEL TESTS ########################################################################
+
+def test__process_directory__missing(environment):
+    """Does `_process_directory()` ignore missing files?"""
+    base_path = environment / "simple"
+    problem_path = base_path / "no-such-file.html"
+    state = WalkState((base_path,))
+    _process_directory(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert exceptions == []
+
+
+def test__process_directory__not_readable(environment):
+    """Does `_process_directory()` handle directories it cannot read?"""
+    base_path = environment / "errors"
+    problem_path = base_path / "not-readable"
+    state = WalkState((base_path,))
+    _process_directory(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert len(exceptions) == 1
+    exception = exceptions[0]
+    assert isinstance(exception, NoReadPermission)
+    assert exception.path == problem_path
+    assert exception.error_code == 13
+    assert exception.error_name == "EACCES"
+    assert exception.operation_verb == "collect the contents of"
+    assert exception.file_type == "directory"
+    assert str(exception) == (
+        f"Could not collect the contents of “{problem_path}”: You don’t have permission "
+        "to read the directory"
+    )
+
+
+def test__process_directory__not_a_directory(environment):
+    """Does `_process_directory()` handle directories becoming non-directories?"""
+    base_path = environment / "simple"
+    problem_path = base_path / "one-item.html"
+    state = WalkState((base_path,))
+    _process_directory(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert len(exceptions) == 1
+    exception = exceptions[0]
+    assert isinstance(exception, ConcurrentlyReplacedDirectory)
+    assert exception.path == problem_path
+    assert exception.error_code == 20
+    assert exception.error_name == "ENOTDIR"
+    assert exception.operation_verb == "collect the contents of"
+    assert exception.file_type == "directory"
+    assert str(exception) == (
+        f"Could not collect the contents of “{problem_path}”: Expected a directory, but "
+        "found another type of file system object, possibly because the directory was "
+        "replaced with the new object while the application was running"
+    )
+
+
+def test__process_directory__not_a_directory_and_not_readable(environment):
+    """What happens if a directory becomes a non-readable non-directory?"""
+    base_path = environment / "errors"
+    problem_path = base_path / "not-readable.html"
+    state = WalkState((base_path,))
+    _process_directory(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert len(exceptions) == 1
+    exception = exceptions[0]
+    assert isinstance(exception, ConcurrentlyReplacedDirectory)
+
+
+def test__process_where_from_candidate__missing(environment):
+    """Does `_process_where_from_candidate()` ignore missing files?"""
+    base_path = environment / "simple"
+    problem_path = base_path / "no-such-file.html"
+    state = WalkState((base_path,))
+    _process_where_from_candidate(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert exceptions == []
+
+
+def test__process_where_from_candidate__not_readable(environment):
+    """Does `_process_where_from_candidate()` handle directories it cannot read?"""
+    base_path = environment / "errors"
+    problem_path = base_path / "not-readable.html"
+    state = WalkState((base_path,))
+    _process_where_from_candidate(problem_path, state)
+    results, exceptions = state.get_result()
+    assert results == []
+    assert len(exceptions) == 1
+    exception = exceptions[0]
+    assert isinstance(exception, NoReadPermission)
+    assert exception.path == problem_path
+    assert exception.error_code == 13
+    assert exception.error_name == "EACCES"
+    assert exception.operation_verb == "read the “where from” value of"
+    assert exception.file_type == "file"
+    assert str(exception) == (
+        f"Could not read the “where from” value of “{problem_path}”: You don’t have "
+        "permission to read the file"
+    )
+
+
+# HIGH-LEVEL TESTS #######################################################################
 
 def test_walk_directory_trees__simple(environment: Path):
     """Does walking a simple directory tree gather all the “where from” values?"""
@@ -82,15 +190,6 @@ def test_walk_directory_trees__none():
     results, errors = walk_directory_trees()
     assert results == []
     assert errors == []
-
-
-def test_walk_state__handle_exception__missing_file():
-    """Does `WalkState` ignore `MissingFile` exceptions?"""
-    base_path = Path("/Users/someone/somewhere")
-    missing_file_path = base_path / "no-such-file.txt"
-    state = WalkState((base_path,))
-    state.handle_exception(MissingFile(missing_file_path, 2, "ENOENT", "gettext"))
-    assert not state._exceptions
 
 
 # EXPECTED RESULTS #######################################################################

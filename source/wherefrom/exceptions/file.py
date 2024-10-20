@@ -112,6 +112,26 @@ class OverlongPath(LowLevelFileError):
         system limits
     """
 
+
+# ERRORS CAUSED BY CONCURRENT MODIFICATIONS ##############################################
+
+@register_for(20, "ENOTDIR", operations=["readdir"])
+class ConcurrentlyReplacedDirectory(LowLevelFileError):
+    """
+    Raised if a file-system object that should be a directory but isn’t one is encountered
+    while walking a directory tree.
+
+    This should only be possible if the object used to be a directory, but either it or
+    one if its path components has been replaced by another type of file system object
+    between the time it was first encountered and the `readdir()` system call.
+    """
+    MESSAGE = (
+        "Expected a directory, but found another type of file system object, possibly "
+        "because the directory was replaced with the new object while the application "
+        "was running"
+    )
+
+
 # INTERNAL ERRORS ########################################################################
 
 @register_for(5, "EIO")
@@ -130,8 +150,10 @@ class UnexpectedFileError(LowLevelFileError):
     MESSAGE = "An unexpected error ocurred ({error_name})"
 
 
-@register_for(14, "EFAULT", operations=["getxattr"])
+@register_for(9, "EBADF", operations=["readdir"])
+@register_for(14, "EFAULT", operations=["stat", "getxattr"])
 @register_for(22, "EINVAL", operations=["getxattr"])
+@register_for(84, "EOVERFLOW", operations=["stat"])
 class SupposedlyImpossibleFileError(UnexpectedFileError):
     """
     Raised if a file operation fails with an error code that is documented but wasn’t
@@ -144,6 +166,9 @@ class SupposedlyImpossibleFileError(UnexpectedFileError):
     # It uses `EINVAL` to indicate that the given attribute name is invalid, or that
     # an unsupported option has been specified. That shouldn’t be possible, since the
     # application only uses a single attribute name, and doesn’t use any options.
+    #
+    # Similarly, a `EFAULT` or `EOVERFLOW` from `stat()` or a `EBADF` from `readdir()`
+    # would indicate a bug in the Python standard library.
 
 
 @register_as_default()

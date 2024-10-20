@@ -14,6 +14,7 @@ The application’s exception hierarchy is structured as follows:
      │   │   ├─ NoReadPermission
      │   │   ├─ TooManySymlinks
      │   │   ├─ OverlongPath
+     │   │   ├─ ConcurrentlyReplacedDirectory
      │   │   ├─ FileIOError
      │   │   ├─ UnexpectedFileError
      │   │   │   ├─ SupposedlyImpossibleFileError
