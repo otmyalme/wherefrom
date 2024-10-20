@@ -61,6 +61,10 @@ branch = true
 
 [tool.coverage.report]
 fail_under = 100
+exclude_lines = [
+    "# pragma: no cover",
+    "if TYPE_CHECKING:",
+]
 
 [tool.coverage.html]
 directory = "coverage"
@@ -132,7 +136,7 @@ ignore = [
     "D415",     # ditto
     "DOC",      # Missing docstring items; the project doesn’t use that docstring format
     "E302",     # Not enough empty lines; one empty line may be enough in some cases
-    "F403",     # Star imports; those are sometimes appropriate
+    "E303",     # Too many empty lines; one empty line may not be enough in some cases
     "F405",     # Names from star imports; those are sometimes appropriate
     "I",        # Unsorted imports; the linter’s sort order is often nonsensical
     "N818",     # Exception classes without an “Error” suffix; Not the project’s style
@@ -144,12 +148,15 @@ ignore = [
 ]
 allowed-confusables = [
     "›",  # U+200D SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    "–",  # U+2013 EN DASH
     "’",  # U+2019 RIGHT SINGLE QUOTATION MARK
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
+    "ARG001",   # Allow unused arguments in tests (they’re probably fixtures)
     "D400",     # Allow the first docstring line to end with a question mark in test files
+    "F403",     # Allow star imports in test files
     "PLC2701",  # Allow private imports in test files
     "PLR0913",  # Allow lots of arguments in tests
     "PLR0917",  # Allow lots of positional arguments in tests
@@ -157,6 +164,7 @@ allowed-confusables = [
     "S101",     # Allow assert statements in tests
     "S404",     # Allow use of the `subprocess` module
     "S603",     # Don’t be suspicious of `subprocess.run` calls just in case
+    "SLF001",   # Allow accessing private members in tests
 ]
 
 

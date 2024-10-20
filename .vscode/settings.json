@@ -19,6 +19,7 @@
         "ENAMETOOLONG",
         "ENOATTR",
         "ENOENT",
+        "ENOENTWIVES",
         "ENOTDIR",
         "ENOTSUP",
         "EPERM",
@@ -29,6 +30,7 @@
         "mypy",
         "popleft",
         "pytest",
+        "readdir",
         "readexceptions",
         "scandir",
         "testpaths",
@@ -40,6 +42,7 @@
     ],
     "editor.unicodeHighlight.allowedCharacters": {
         "›": true,
+        "–": true,
         "’": true
     },
     "files.exclude": {

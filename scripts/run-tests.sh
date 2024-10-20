@@ -8,12 +8,14 @@
 # developer to scroll up to see the test failures).
 #
 # The script accepts the following arguments:
-#     --skip-tests     Do not run the tests
-#     --skip-report    Do not print the coverage report to the terminal
-#     --verbose        Run the tests with verbose output
+#     --skip-tests               Do not run the tests
+#     --skip-report              Do not print the coverage report to the terminal
+#     --verbose                  Run the tests with verbose output
+#     --exit-at-first-failure    Immediately exit if a test fails
 #
-# This script can be run using `c tr`, or `c vr` to run it with `--verbose`.
-# `c t` only runs the tests, and `c r` only prints the coverage report.
+# This script can be run using `c tr`, `c vr` to run it with `--verbose`, `c xr` to run it
+# with `--exit-at-first-failure`, and `c vxr` to run it with both. Omitting the `r` runs
+# it with `--skip-report`, and omitting the `t`, `v`, or `x` runs it with `--skip-tests`.
 
 RUN_TESTS=true
 PRINT_COVERAGE_REPORT=true
@@ -25,6 +27,7 @@ while [ "$1" ]; do
         --skip-tests) RUN_TESTS=false;;
         --skip-report) PRINT_COVERAGE_REPORT=false;;
         --verbose) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS -vv";;
+        --exit-at-first-failure) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS -x";;
         *) echo "Unknown argument: $1"; exit -1;;
     esac
     shift

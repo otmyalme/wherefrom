@@ -13,7 +13,10 @@ import os
 from pathlib import Path
 from typing import cast
 
-from wherefrom.readexceptions import *
+from wherefrom.exceptions.read import (
+    MissingExternalLibrary, MissingExternalLibraryFunction,
+)
+from wherefrom.exceptions.registry import get_exception_by_error_code, register_operation
 
 
 # PUBLIC FUNCTIONS #######################################################################
@@ -22,10 +25,14 @@ def read_binary_where_from_value(path: Path) -> bytes:
     """
     Read the binary “where from” value of the given file.
 
-    If the file doesn’t have a “where from” value, `NoWhereFromValue` is raised.
+    Raises a `MissingExternalDependencyError` subclass if the function cannot read any
+    file’s “where from” values because of a missing external dependency.
 
-    If another error occurs, a subclass of `MissingExternalDependencyError` or another
-    `WhereFromValueReadingError` is raised.
+    Raises a `LowLevelFileError` subclass if the function cannot read the given file’s
+    “where from” value, even if that’s because the file doesn’t have one. (The subclass
+    it raises in that case is `NoWhereFromValue`.)
+
+    Note that the exception raised need not be a `WhereFromValueReadingError`.
     """
     path_bytes = os.fsencode(path)
     attribute_length = _read_binary_where_from_value_length(path_bytes)
@@ -36,6 +43,11 @@ def read_binary_where_from_value(path: Path) -> bytes:
 
 # The full name of the “where from” attribute.
 WHERE_FROM_ATTRIBUTE_NAME = "com.apple.metadata:kMDItemWhereFroms"
+
+
+# REGISTRATION ###########################################################################
+
+register_operation("getxattr", "read the “where from” value of")
 
 
 # READING THE VALUE ######################################################################
@@ -88,7 +100,7 @@ def _call_getxattr(path: bytes, buffer: Buffer | None = None) -> int:
         0,  # Options; can be used to avoid following symbolic links
     )
     if result < 0:
-        raise _get_reading_exception(path, ctypes.get_errno())
+        raise get_exception_by_error_code(ctypes.get_errno(), "getxattr", path)
     else:
         return result
 
@@ -134,56 +146,3 @@ def _get_external_getxattr_function(library: ctypes.CDLL) -> GetXAttrFunction:
     except AttributeError:
         names = (EXTERNAL_C_LIBRARY_NAME, EXTERNAL_GETXATTR_FUNCTION_NAME)
         raise MissingExternalLibraryFunction(*names) from None
-
-
-# HANDLING ERRORS ########################################################################
-
-def _get_reading_exception(path: bytes, error_code: int) -> WhereFromValueReadingError:
-    """Get an exception to throw for `getxattr()` errors with the given code."""
-    proper_path = Path(os.fsdecode(path))
-    default = DEFAULT_ERROR_INFORMATION
-    error_name, exception_class = ERROR_INFORMATION.get(error_code, default)
-    return exception_class(proper_path, error_code, error_name)
-
-
-# A dict that maps error codes from `getxattr()` to their name and the appropriate
-# exception to throw.
-#
-# See https://github.com/apple-open-source/macos/blob/master/xnu/bsd/sys/errno.h for
-# the mapping of error codes to names.
-#
-# See the docstrings of the exception classes for details about the errors.
-ERROR_INFORMATION = {
-    # Undocumented codes
-     2: ("ENOENT", MissingFile),
-    # Documented codes in the order they appear on the `getxattr` manpage
-    93: ("ENOATTR", NoWhereFromValue),
-    45: ("ENOTSUP", UnsupportedFileSystem),
-    34: ("ERANGE", WhereFromValueLengthMismatch),
-     1: ("EPERM", UnsupportedFileSystemObject),
-    22: ("EINVAL", UnexpectedErrorReadingWhereFromValue),  # Cannot happen; see below
-    21: ("EISDIR", UnsupportedFileSystemObject),  # Probably cannot happen; see below
-    20: ("ENOTDIR", MissingFile),
-    63: ("ENAMETOOLONG", UnsupportedPath),
-    13: ("EACCES", NoReadPermission),
-    62: ("ELOOP", TooManySymlinks),
-    14: ("EFAULT", UnexpectedErrorReadingWhereFromValue),  # Probably cannot happen
-     5: ("EIO", IOErrorReadingWhereFromValue),
-}
-
-# `EINVAL` indicates that the attribute name is invalid, or that unsupported options have
-# been passed to `getxattr()`. That shouldn’t be possible, since the application only
-# uses a single attribute name, and doesn’t use any options.
-#
-# `EISDIR` is, according to the manpage, similar to `EPERM`, and is used if the path isn’t
-# a regular file, but the attribute in question can only be used for files. It’s not clear
-# whether that can actually happen; the name suggests the error would occur if the path is
-# a directory, but reading the “where from” value of a directory works just fine (on an
-# APFS volume, at least).
-#
-# `EFAULT` indicates that the path or attribute name passed to `getxattr()` points to an
-# invalid memory address. That would indicate a bug in `ctypes`.
-
-
-# The error information to use if the error code is missing from `ERROR_INFORMATION`.
-DEFAULT_ERROR_INFORMATION = ("UNKNOWN", UnknownErrorReadingWhereFromValue)

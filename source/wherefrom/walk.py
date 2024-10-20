@@ -8,27 +8,29 @@ than “don’t” and “endless loop”.
 """
 
 from collections import deque
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 import os
 from pathlib import Path
 
 from wherefrom.read import read_binary_where_from_value
 from wherefrom.parse import parse_binary_where_from_value
-from wherefrom.exceptions import WhereFromValueError
-from wherefrom.readexceptions import MissingFile, NoWhereFromValue
+from wherefrom.exceptions.file import FileError, MissingFile
+from wherefrom.exceptions.read import NoWhereFromValue
+from wherefrom.exceptions.registry import get_exception_from_os_error, register_operation
 
 
 # TYPES ##################################################################################
 
 type PathAndWhereFromValue = tuple[Path, list[str]]
 type PathsAndWhereFromValues = list[PathAndWhereFromValue]
-type WalkErrors = list[WhereFromValueError]
+type WalkErrors = list[FileError]
 type WalkResults = tuple[PathsAndWhereFromValues, WalkErrors]
 
 
 # PUBLIC FUNCTIONS #######################################################################
 
-def walk_directory_trees(base_paths: list[Path]) -> WalkResults:
+def walk_directory_trees(*base_paths: Path) -> WalkResults:
     """
     Recursively gather the “where from” values of all files system objects other than
     directories in the directory trees rooted at the given base paths.
@@ -51,7 +53,13 @@ def walk_directory_trees(base_paths: list[Path]) -> WalkResults:
     """
     state = WalkState(base_paths)
     _process_base_paths(state)
-    return (state.paths_and_values, state.exceptions)
+    return state.get_result()
+
+
+# REGISTRATION ###########################################################################
+
+register_operation("readdir", "collect the contents of")
+register_operation("stat", "process")
 
 
 # STATE ##################################################################################
@@ -60,18 +68,28 @@ def walk_directory_trees(base_paths: list[Path]) -> WalkResults:
 class WalkState:
     """Store the state and results of a walk operation."""
 
-    base_paths: list[Path]
+    base_paths: tuple[Path, ...]
     pending_directory_paths: deque[Path] = field(default_factory=deque)
-    paths_and_values: PathsAndWhereFromValues = field(default_factory=list)
-    exceptions: WalkErrors = field(default_factory=list)
+
+    # The following attributes should only be accessed by the class’s methods.
+    _paths_and_values: PathsAndWhereFromValues = field(default_factory=list)
+    _exceptions: WalkErrors = field(default_factory=list)
+
 
     def add_value(self, path: Path, where_from_value: list[str]) -> None:
-        """Add a path and “where from” value to the walk results."""
-        self.paths_and_values.append((path, where_from_value))
+        """Add the given path and “where from” value to the walk results."""
+        self._paths_and_values.append((path, where_from_value))
 
-    def add_exception(self, exception: WhereFromValueError) -> None:
-        """Add an exception to the walk results."""
-        self.exceptions.append(exception)
+    def handle_exception(self, exception: FileError) -> None:
+        """
+        Add the given exception to the walk results, but ignore `MissingFile` exceptions.
+        """
+        if not isinstance(exception, MissingFile):
+            self._exceptions.append(exception)
+
+    def get_result(self) -> WalkResults:
+        """Get the results of the walk."""
+        return (self._paths_and_values, self._exceptions)
 
 
 # PROCESSING #############################################################################
@@ -105,7 +123,10 @@ def _process_directory(path: Path, state: WalkState) -> None:
     the given state. Add the “where from” values of all other file system objects (or
     any relevant exceptions raised when attempting to read them) to the state’s result.
     """
-    subdirectory_paths, candidate_paths = _gather_directory_contents(path)
+    subdirectory_paths: list[Path] = []
+    candidate_paths: list[Path] = []
+    for entry in _directory_entries(path, state):
+        _classify_directory_entry(entry, subdirectory_paths, candidate_paths, state)
     _sort_sibling_paths(subdirectory_paths)
     _sort_sibling_paths(candidate_paths)
     state.pending_directory_paths.extend(subdirectory_paths)
@@ -113,20 +134,38 @@ def _process_directory(path: Path, state: WalkState) -> None:
         _process_where_from_candidate(file_path, state)
 
 
-def _gather_directory_contents(path: Path) -> tuple[list[Path], list[Path]]:
+def _directory_entries(path: Path, state: WalkState) -> Iterator[os.DirEntry[str]]:
+    """Yield a `DirEntry` object for each file system object in the given directory."""
+    try:
+        yield from os.scandir(path)
+    except OSError as e:
+        state.handle_exception(get_exception_from_os_error(e, "readdir", "directory"))
+
+
+def _classify_directory_entry(
+    entry: os.DirEntry[str],
+    subdirectory_paths: list[Path],
+    candidate_paths: list[Path],
+    state: WalkState,
+) -> None:
     """
-    Return lists of the subdirectories and other file system objects in the given path.
-    Symbolic links to directories count as “other”.
+    Add the path of the given `DirEntry` object to the appropriate list, if any.
+
+    If the `DirEntry` is for a directory (but not a symlink to a directory), add it to
+    `subdirectory_paths`. If it’s a file or a symlink to one, add it to `candidate_paths`.
+    Otherwise, do nothing.
     """
-    subdirectory_paths = []
-    candidate_paths = []
-    for entry in os.scandir(path):
-        entry_path = Path(entry.path)
-        if _safe_is_real_directory(entry):
+    entry_path = Path(entry.path)
+    try:
+        # If this could run on Windows, it should call `is_junction()`, too.
+        if entry.is_dir(follow_symlinks=False):
             subdirectory_paths.append(entry_path)
-        else:
+        elif entry.is_file():
             candidate_paths.append(entry_path)
-    return subdirectory_paths, candidate_paths
+        else:
+            pass  # Ignore other file system objects
+    except OSError as e:
+        state.handle_exception(get_exception_from_os_error(e, "stat"))
 
 
 def _process_where_from_candidate(path: Path, state: WalkState) -> None:
@@ -140,26 +179,13 @@ def _process_where_from_candidate(path: Path, state: WalkState) -> None:
         value = parse_binary_where_from_value(binary_value, path)
     except (NoWhereFromValue, MissingFile):
         pass
-    except WhereFromValueError as e:
-        state.add_exception(e)
+    except FileError as e:
+        state.handle_exception(e)
     else:
         state.add_value(path, value)
 
 
 # UTILITY FUNCTIONS ######################################################################
-
-def _safe_is_real_directory(entry: os.DirEntry[str]) -> bool:
-    """
-    Check whether the given `DirEntry` represents a directory (but not a symlink to one).
-    This usually doesn’t require a system call, but if it does and there is an error,
-    the function returns False.
-    """
-    try:
-        # If this could run on Windows, it should call `is_junction()`, too.
-        return entry.is_dir(follow_symlinks=False)
-    except OSError:
-        return False
-
 
 def _sort_sibling_paths(paths: list[Path]) -> None:
     """

@@ -2,34 +2,50 @@
 Test the `wherefrom.walk` module.
 """
 
-import os
 from pathlib import Path
-from unittest.mock import MagicMock, call
 
 import pytest
 
-from wherefrom.walk import walk_directory_trees, _safe_is_real_directory
-from wherefrom.readexceptions import NoReadPermission, TooManySymlinks
+from wherefrom.walk import walk_directory_trees, WalkState
+from wherefrom.exceptions.file import MissingFile, NoReadPermission, TooManySymlinks
 
 from tests.tools.environment.structure import ONE_URL, TWO_URLS
 
 
+# TESTS ##################################################################################
+
 def test_walk_directory_trees__simple(environment: Path):
     """Does walking a simple directory tree gather all the “where from” values?"""
     path = environment / "simple"
-    results, errors = walk_directory_trees([path])
+    results, errors = walk_directory_trees(path)
     assert results == get_expected_simple_results(environment)
     assert not errors
+
+
+def test_walk_directory_trees__errors(environment: Path):
+    """Are errors properly handled?"""
+    path = environment / "errors"
+    results, errors = walk_directory_trees(path)
+    assert results == []
+    assert errors == [
+        NoReadPermission(
+            path / "not-readable.html", 13, "EACCES", "read the “where from” value of",
+        ),
+        NoReadPermission(
+            path / "not-readable", 13, "EACCES", "collect the contents of", "directory",
+        ),
+        TooManySymlinks(path / "too-many-symlinks" / "33", 62, "ELOOP", "process"),
+    ]
 
 
 @pytest.mark.timeout(0.1)
 def test_walk_directory_trees__loops(environment: Path):
     """Does walking a directory tree with looping symlinks terminate?"""
     path = environment / "loops"
-    results, errors = walk_directory_trees([path])
+    results, errors = walk_directory_trees(path)
     # These asserts are incidental. The main thing to test is whether the call terminates.
     assert not results
-    assert errors == [TooManySymlinks(path / "self-loop", 62, "ELOOP")]
+    assert errors == [TooManySymlinks(path / "self-loop", 62, "ELOOP", "process")]
 
 
 @pytest.mark.timeout(0.1)
@@ -50,19 +66,31 @@ def test_walk_directory_trees__multiple(environment: Path):
         (environment / "one-item-link", ONE_URL),
         *get_expected_simple_results(environment, "simple-link"),
     ]
-    actual_results, errors = walk_directory_trees(paths)
+    actual_results, errors = walk_directory_trees(*paths)
     assert actual_results == expected_results
     assert errors == [
-        TooManySymlinks(environment / "loops" / "self-loop", 62, "ELOOP"),
-        NoReadPermission(environment / "errors" / "not-readable.html", 13, "EACCES"),
+        TooManySymlinks(environment / "loops" / "self-loop", 62, "ELOOP", "process"),
+        NoReadPermission(
+            environment / "errors" / "not-readable.html", 13, "EACCES",
+            "read the “where from” value of",
+        ),
     ]
 
 
 def test_walk_directory_trees__none():
-    """Does walking an empty list of directory trees work?"""
-    results, errors = walk_directory_trees([])
+    """Does walking an empty list of directory trees do nothing?"""
+    results, errors = walk_directory_trees()
     assert results == []
     assert errors == []
+
+
+def test_walk_state__handle_exception__missing_file():
+    """Does `WalkState` ignore `MissingFile` exceptions?"""
+    base_path = Path("/Users/someone/somewhere")
+    missing_file_path = base_path / "no-such-file.txt"
+    state = WalkState((base_path,))
+    state.handle_exception(MissingFile(missing_file_path, 2, "ENOENT", "gettext"))
+    assert not state._exceptions
 
 
 # EXPECTED RESULTS #######################################################################
@@ -77,14 +105,3 @@ def get_expected_simple_results(environment: Path, directory_name: str = "simple
         (path / "subdirectory" / "one-item.html", ONE_URL),
         (path / "subdirectory" / "sub-subdirectory" / "one-item.html", ONE_URL),
     ]
-
-
-# PRIVATE FUNCTIONS ######################################################################
-
-def test__safe_is_real_directory__error():
-    """Does `_safe_is_real_directory()` return False if there is an `OSError`?"""
-    # This requires mocking. `os.DirEntry` cannot be instantiated or subclassed.
-    fake_dir_entry = MagicMock(spec_set=os.DirEntry)
-    fake_dir_entry.is_dir = MagicMock(side_effect=OSError())
-    assert not _safe_is_real_directory(fake_dir_entry)
-    assert fake_dir_entry.mock_calls == [call.is_dir(follow_symlinks=False)]

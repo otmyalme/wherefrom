@@ -71,7 +71,7 @@ def create_files_that_cause_errors(environment_path: Path) -> Path:
 def create_too_many_symlinks(errors_path: Path) -> Path:
     """Create a chain of 33 symlinks, which is more than macOS is willing to follow."""
     directory = create_directory(errors_path, "too-many-symlinks")
-    target_path = create_file(directory, "target.html", ONE_URL)
+    target_path = create_file(directory, "target.html", Sentinel.NO_VALUE)
     for n in range(33):
         target_path = create_symlink(directory, f"{n + 1}", target_path)
     return directory

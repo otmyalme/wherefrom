@@ -6,12 +6,13 @@
 # discovered the issue.
 #
 # The script accepts the following arguments:
-#     --skip-tests              Do not run the tests
-#     --skip-type-checks        Do not run the type checks
-#     --skip-linter             Do not run the linter
-#     --skip-coverage-report    Do not print the coverage report to the terminal
-#     --verbose-tests           Run the tests with verbose output
-#     --fix-linter-issues       Automatically fix linter issues, if possible
+#     --skip-tests               Do not run the tests
+#     --skip-type-checks         Do not run the type checks
+#     --skip-linter              Do not run the linter
+#     --skip-coverage-report     Do not print the coverage report to the terminal
+#     --verbose-tests            Run the tests with verbose output
+#     --exit-at-first-failure    Run the tests, but immediately exit if a test fails
+#     --fix-linter-issues        Automatically fix linter issues, if possible
 #
 # The script can be run using `c`. See that script’s documentation for an explanation
 # as to how to specify the optional arguments.
@@ -33,6 +34,7 @@ while [ "$1" ]; do
         --skip-linter) RUN_LINTER=false;;
         --skip-coverage-report) PRINT_COVERAGE_REPORT=false;;
         --verbose-tests) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS --verbose";;
+        --exit-at-first-failure) EXTRA_TEST_ARGUMENTS="$EXTRA_TEST_ARGUMENTS $1";;
         --fix-linter-issues) EXTRA_LINTER_ARGUMENTS="$EXTRA_LINTER_ARGUMENTS --fix";;
         *) echo "Unknown argument: $1"; exit -1;;
     esac

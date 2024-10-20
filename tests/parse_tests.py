@@ -15,9 +15,8 @@ from plistlib import UID
 import pytest
 
 from wherefrom.read import read_binary_where_from_value
-from wherefrom.parse import (
-    parse_binary_where_from_value, MalformedWhereFromValue, UnexpectedWhereFromValue,
-)
+from wherefrom.parse import parse_binary_where_from_value
+from wherefrom.exceptions.parse import MalformedWhereFromValue, UnexpectedWhereFromValue
 
 from tests.tools.environment.items import WhereFromValue
 

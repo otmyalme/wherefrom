@@ -1,32 +1,36 @@
 """
-Provides base classes for the exceptions used by the application.
+Define a base class for the exceptions raised by the application.
 
 The application’s exception hierarchy is structured as follows:
 
     WhereFromException
-     ├─ MissingExternalDependencyError
-     │   ├─ MissingExternalLibrary
-     │   └─ MissingExternalLibraryFunction
-     └─ WhereFromValueError
-         ├─ WhereFromValueReadingError
-         │   ├─ NoWhereFromValue
-         │   ├─ MissingFile
-         │   ├─ NoReadPermission
-         │   ├─ TooManySymlinks
-         │   ├─ UnsupportedPath
-         │   ├─ UnsupportedFileSystem
-         │   ├─ UnsupportedFileSystemObject
-         │   ├─ WhereFromValueLengthMismatch
-         │   ├─ IOErrorReadingWhereFromValue
-         │   └─ UnexpectedErrorReadingWhereFromValue
-         │       └─ UnknownErrorReadingWhereFromValue
-         └─ WhereFromValueValueError
-             ├─ MalformedWhereFromValue
-             └─ UnexpectedWhereFromValue
+     ├─ ExistingRegistration
+     │   ├─ ExistingErrorNameRegistration
+     │   └─ ExistingExceptionClassRegistration
+     ├─ FileError
+     │   ├─ LowLevelFileError
+     │   │   ├─ MissingFile
+     │   │   ├─ NoReadPermission
+     │   │   ├─ TooManySymlinks
+     │   │   ├─ OverlongPath
+     │   │   ├─ FileIOError
+     │   │   ├─ UnexpectedFileError
+     │   │   │   ├─ SupposedlyImpossibleFileError
+     │   │   │   └─ UnknownFileError
+     │   │   └─ WhereFromValueReadingError
+     │   │       ├─ NoWhereFromValue
+     │   │       ├─ UnsupportedFileSystem
+     │   │       ├─ UnsupportedFileSystemObject
+     │   │       └─ WhereFromValueLengthMismatch
+     │   └─ WhereFromValueValueError
+     │       ├─ MalformedWhereFromValue
+     │       └─ UnexpectedWhereFromValue
+     └─ MissingExternalDependencyError
+         ├─ MissingExternalLibrary
+         └─ MissingExternalLibraryFunction
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import ClassVar
 
 from wherefrom.tools import multiline_string_as_one_line
@@ -66,10 +70,3 @@ class WhereFromException(Exception):
         else:
             template = self.MESSAGE
         return template.format(**vars(self))
-
-
-# BASE CLASSES FOR SUB-HIERARCHIES #######################################################
-
-class WhereFromValueError(WhereFromException):
-    """A base class for exceptions related to a file’s “where from” value."""
-    path: Path

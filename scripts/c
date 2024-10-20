@@ -9,7 +9,8 @@
 #     t, y, l, c    Run the tests, the type checker, the linter, or the coverage report,
 #                   respectively, but skip all other steps unless specified
 #     T, Y, L, C    Slip the tests, the type checker, the linter, or the coverage report
-#         v         Run the test, in verbose mode
+#         v         Run the tests, in verbose mode
+#         x         Run the tests, but immediately exit if a test fails
 #         f         Run the linter and automatically fix the issues it finds, if possible
 #
 # “r” and “R” are synonyms of “c” and “C”.
@@ -47,6 +48,7 @@ for (( i=0; i<${#COMMAND}; i++ )); do
         L) RUN_LINTER=false;;
         C|R) PRINT_COVERAGE_REPORT=false;;
         v) RUN_TESTS=true; EXTRA_ARGUMENTS="$EXTRA_ARGUMENTS --verbose-tests";;
+        x) RUN_TESTS=true; EXTRA_ARGUMENTS="$EXTRA_ARGUMENTS --exit-at-first-failure";;
         f) RUN_LINTER=true; EXTRA_ARGUMENTS="$EXTRA_ARGUMENTS --fix-linter-issues";;
         *) echo "Unknown character: $c"; exit -1;;
     esac

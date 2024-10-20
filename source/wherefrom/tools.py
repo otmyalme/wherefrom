@@ -2,9 +2,24 @@
 Provide assorted utility functions that are useful for the application.
 """
 
+import os
+from pathlib import Path
 import re
 from typing import TypeGuard
 
+
+# VALUE CONVERSION #######################################################################
+
+def as_path_object(path: Path | str | bytes) -> Path:
+    """Ensure the given path is represented by a `Path` object."""
+    if isinstance(path, bytes):
+        path = os.fsdecode(path)
+    if isinstance(path, str):
+        path = Path(path)
+    return path
+
+
+# FORMATTING #############################################################################
 
 LINE_BREAK_PATTERN = re.compile(r"\s*\n\s*")
 
@@ -20,6 +35,8 @@ def multiline_string_as_one_line(string: str) -> str:
     """
     return LINE_BREAK_PATTERN.sub(" ", string.strip())
 
+
+# TYPE-CHECKING ##########################################################################
 
 def is_nonempty_list_of_strings(value: object) -> TypeGuard[list[str]]:
     """Check whether the given object is a list of strings with at least one element."""

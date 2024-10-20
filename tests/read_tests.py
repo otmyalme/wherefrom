@@ -1,7 +1,5 @@
 """
-Test the happy paths of the `wherefrom.read` module.
-
-Errors are tested by `tests.read_error_tests`, not by this module.
+Test the `wherefrom.read` module.
 """
 
 import ctypes.util
@@ -11,11 +9,12 @@ import pytest
 
 import wherefrom.read
 from wherefrom.read import (
-    read_binary_where_from_value,
-    _read_binary_where_from_value_length, _read_binary_where_from_value,
-    _get_reading_exception, _load_external_getxattr_function,
+    read_binary_where_from_value, _read_binary_where_from_value_length,
+    _read_binary_where_from_value, _load_external_getxattr_function,
 )
-from wherefrom.readexceptions import *
+from wherefrom.exceptions.file import *
+from wherefrom.exceptions.read import *
+from wherefrom.exceptions.registry import get_exception_by_error_code
 
 
 # LOADING THE EXTERNAL C FUNCTION ########################################################
@@ -77,7 +76,7 @@ def test__read_binary_where_from_value__buffer_too_small(environment: Path):
     assert exception.error_code == 34
     assert exception.error_name == "ERANGE"
     assert str(exception) == (
-        f"Could not read the “were from” value of “{path}”: The value may have changed "
+        f"Could not read the “where from” value of “{path}”: The value may have changed "
         "while it was being read"
     )
 
@@ -126,7 +125,7 @@ def test_read_binary_where_from_value__unsupported_file_system_object():
     assert exception.error_code == 1
     assert exception.error_name == "EPERM"
     assert str(exception) == (
-        "Could not read the “were from” value of “/dev/null”: That type of file system "
+        "Could not read the “where from” value of “/dev/null”: That type of file system "
         "object doesn’t support the attribute"
     )
 
@@ -161,24 +160,24 @@ FILE_TEST_CASES = [
     # The file cannot be read
     (
         "errors/not-readable.html", NoReadPermission, 13, "EACCES",
-        "You don’t have permission to access the file",
+        "You don’t have permission to read the file",
     ),
     (
         "errors/not-readable/one-item.html", NoReadPermission, 13, "EACCES",
-        "You don’t have permission to access the file",
+        "You don’t have permission to read the file",
     ),
-    # There are too many symlinks to follow
+    # There are too many symlinks to traverse
     (
         "errors/too-many-symlinks/33", TooManySymlinks, 62, "ELOOP",
-        "Had to traverse too many symbolic links",
+        "There were too many symbolic links to traverse",
     ),
     (
         "loops/self-loop/impossible.html", TooManySymlinks, 62, "ELOOP",
-        "Had to traverse too many symbolic links",
+        "There were too many symbolic links to traverse",
     ),
     # The path violates the macOS size restrictions
     (
-        f"l{'o' * 256}ng-name.png", UnsupportedPath, 63, "ENAMETOOLONG",
+        f"l{'o' * 256}ng-name.png", OverlongPath, 63, "ENAMETOOLONG",
         "The length of the file’s path or of one of its components exceeds the system "
         "limits",
     ),
@@ -202,20 +201,20 @@ ERROR_CODE_TESTS = [
         "That type of file system object doesn’t support the attribute",
     ),
     (
-        IOErrorReadingWhereFromValue, 5, "EIO",
+        FileIOError, 5, "EIO",
         "An I/O error occurred",
     ),
     # Unexpected Errors
     (
-        UnexpectedErrorReadingWhereFromValue, 22, "EINVAL",
+        SupposedlyImpossibleFileError, 22, "EINVAL",
         "An unexpected error ocurred (EINVAL)",
     ),
     (
-        UnexpectedErrorReadingWhereFromValue, 14, "EFAULT",
+        SupposedlyImpossibleFileError, 14, "EFAULT",
         "An unexpected error ocurred (EFAULT)",
     ),
     (
-        UnknownErrorReadingWhereFromValue, -1, "UNKNOWN",
+        UnknownFileError, -1, "UNKNOWN",
         "An unknown error ocurred (error code -1)",
     ),
 ]
@@ -241,7 +240,7 @@ def test_read_binary_where_from_value__errors(
     assert exception.error_code == error_code
     assert exception.error_name == error_name
     assert str(exception) == (
-        f"Could not read the “were from” value of “{path}”: {message_tail}"
+        f"Could not read the “where from” value of “{path}”: {message_tail}"
     )
 
 
@@ -255,11 +254,11 @@ def test__get_reading_exception(
     """Do the test cases that simulate an error with a given error code pass?"""
     path = Path("/Users/no-one/nowhere/simulated-file.png")
     path_bytes = bytes(path)
-    exception = _get_reading_exception(path_bytes, error_code)
+    exception = get_exception_by_error_code(error_code, "getxattr", path_bytes)
     assert isinstance(exception, exception_class)
     assert exception.path == path
     assert exception.error_code == error_code
     assert exception.error_name == error_name
     assert str(exception) == (
-        f"Could not read the “were from” value of “{path}”: {message_tail}"
+        f"Could not read the “where from” value of “{path}”: {message_tail}"
     )
