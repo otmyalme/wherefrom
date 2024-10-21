@@ -14,7 +14,7 @@ from wherefrom.read import (
 )
 from wherefrom.exceptions.file import *
 from wherefrom.exceptions.read import *
-from wherefrom.exceptions.registry import get_exception_by_error_code
+from wherefrom.exceptions.registry import get_exception_by_error_number
 
 
 # LOADING THE EXTERNAL C FUNCTION ########################################################
@@ -73,7 +73,7 @@ def test__read_binary_where_from_value__buffer_too_small(environment: Path):
         _read_binary_where_from_value(bytes(path), 7)
     exception = exception_information.value
     assert exception.path == path
-    assert exception.error_code == 34
+    assert exception.error_number == 34
     assert exception.error_name == "ERANGE"
     assert str(exception) == (
         f"Could not read the “where from” value of “{path}”: The value may have changed "
@@ -122,7 +122,7 @@ def test_read_binary_where_from_value__unsupported_file_system_object():
         read_binary_where_from_value(path)
     exception = exception_information.value
     assert exception.path == path
-    assert exception.error_code == 1
+    assert exception.error_number == 1
     assert exception.error_name == "EPERM"
     assert str(exception) == (
         "Could not read the “where from” value of “/dev/null”: That type of file system "
@@ -133,11 +133,11 @@ def test_read_binary_where_from_value__unsupported_file_system_object():
 # ERROR CONDITIONS › PARAMETRIZED TESTS › PARAMETER DEFINITIONS ##########################
 
 FILE_TEST_CASE_PARAMETERS = (
-    "file_name", "exception_class", "error_code", "error_name", "message_tail",
+    "file_name", "exception_class", "error_number", "error_name", "message_tail",
 )
 
 # While reading the file with the given name, is an exception of the given type raised?
-# Does it have the given error code, error name, and message tail?
+# Does it have the given error number, error name, and message tail?
 FILE_TEST_CASES = [
     # The file has no “where from” value
     (
@@ -184,13 +184,13 @@ FILE_TEST_CASES = [
 ]
 
 
-ERROR_CODE_TEST_PARAMETERS = (
-    "exception_class", "error_code", "error_name", "message_tail",
+ERROR_NUMBER_TEST_PARAMETERS = (
+    "exception_class", "error_number", "error_name", "message_tail",
 )
 
 # Would the application raise the given exception class if `getxattr()` were to signal
-# an error with the given code? Would it use the given error name and message tail?
-ERROR_CODE_TESTS = [
+# an error with the given number? Would it use the given error name and message tail?
+ERROR_NUMBER_TESTS = [
     # Expected errors
     (
         UnsupportedFileSystem, 45, "ENOTSUP",
@@ -214,8 +214,12 @@ ERROR_CODE_TESTS = [
         "An unexpected error ocurred (EFAULT)",
     ),
     (
-        UnknownFileError, -1, "UNKNOWN",
-        "An unknown error ocurred (error code -1)",
+        UnexpectedFileError, 33, "EDOM",
+        "An unexpected error ocurred (EDOM)",
+    ),
+    (
+        UnknownFileError, -7357, "UNKNOWN",
+        "An unknown error ocurred (-7357)",
     ),
 ]
 
@@ -227,7 +231,7 @@ def test_read_binary_where_from_value__errors(
     environment: Path,
     file_name: str,
     exception_class: type[WhereFromValueReadingError],
-    error_code: int,
+    error_number: int,
     error_name: str,
     message_tail: str,
 ):
@@ -237,27 +241,27 @@ def test_read_binary_where_from_value__errors(
         read_binary_where_from_value(path)
     exception = exception_information.value
     assert exception.path == path
-    assert exception.error_code == error_code
+    assert exception.error_number == error_number
     assert exception.error_name == error_name
     assert str(exception) == (
         f"Could not read the “where from” value of “{path}”: {message_tail}"
     )
 
 
-@pytest.mark.parametrize(ERROR_CODE_TEST_PARAMETERS, ERROR_CODE_TESTS)
+@pytest.mark.parametrize(ERROR_NUMBER_TEST_PARAMETERS, ERROR_NUMBER_TESTS)
 def test__get_reading_exception(
     exception_class: type[WhereFromValueReadingError],
-    error_code: int,
+    error_number: int,
     error_name: str,
     message_tail: str,
 ):
-    """Do the test cases that simulate an error with a given error code pass?"""
+    """Do the test cases that simulate an error with a given error number pass?"""
     path = Path("/Users/no-one/nowhere/simulated-file.png")
     path_bytes = bytes(path)
-    exception = get_exception_by_error_code(error_code, "getxattr", path_bytes)
+    exception = get_exception_by_error_number(error_number, "getxattr", path_bytes)
     assert isinstance(exception, exception_class)
     assert exception.path == path
-    assert exception.error_code == error_code
+    assert exception.error_number == error_number
     assert exception.error_name == error_name
     assert str(exception) == (
         f"Could not read the “where from” value of “{path}”: {message_tail}"

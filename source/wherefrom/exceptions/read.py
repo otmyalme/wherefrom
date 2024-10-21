@@ -7,8 +7,7 @@ permissions) are defined in `wherefrom.exceptions.file`.
 As in that module, the exception classes have decorators that register the class for
 one or more error codes.
 
-Information regarding the error codes `getxattr()` uses was taken from its manpage. Error
-names are from https://github.com/apple-open-source/macos/blob/master/xnu/bsd/sys/errno.h.
+Information regarding the error codes `getxattr()` uses was taken from its manpage.
 """
 
 from wherefrom.exceptions.base import WhereFromException
@@ -25,13 +24,13 @@ class WhereFromValueReadingError(LowLevelFileError):
     """
 
 
-@register_for(93, "ENOATTR", operations=["getxattr"])
+@register_for("ENOATTR", operations=["getxattr"])
 class NoWhereFromValue(WhereFromValueReadingError, KeyError):
     """Raised when reading the “where from” value of a file that doesn’t have one."""
     MESSAGE = "The {file_type} doesn’t have the value set"
 
 
-@register_for(45, "ENOTSUP", operations=["getxattr"])
+@register_for("ENOTSUP", operations=["getxattr"])
 class UnsupportedFileSystem(WhereFromValueReadingError):
     """
     Raised when reading the “where from” value of a file on a file system that doesn’t
@@ -44,8 +43,8 @@ class UnsupportedFileSystem(WhereFromValueReadingError):
     MESSAGE = "The file system doesn’t support extended file attributes"
 
 
-@register_for(1, "EPERM", operations=["getxattr"])
-@register_for(21, "EISDIR", operations=["getxattr"])
+@register_for("EPERM", operations=["getxattr"])
+@register_for("EISDIR", operations=["getxattr"])
 class UnsupportedFileSystemObject(WhereFromValueReadingError):
     """
     Raised when reading the “where from” value of a file system object that doesn’t
@@ -66,7 +65,7 @@ class UnsupportedFileSystemObject(WhereFromValueReadingError):
     MESSAGE = "That type of file system object doesn’t support the attribute"
 
 
-@register_for(34, "ERANGE", operations=["getxattr"])
+@register_for("ERANGE", operations=["getxattr"])
 class WhereFromValueLengthMismatch(WhereFromValueReadingError):
     """
     Raised if the buffer passed to `_read_binary_where_from_value()` is too small to hold

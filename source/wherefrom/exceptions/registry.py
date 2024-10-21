@@ -1,31 +1,39 @@
 """
 Create exceptions for failed system calls.
 
+System calls signal errors using error codes, which have a name (such as `EIO` for I/O
+errors) and a number (5, in the case of `EIO`). This module provides functionality for
+mapping these codes to exception classes.
+
 A subclass of `LowLevelFileError` can be registered for a given error code by decorating
-it with `register_for()`. Then, calling `get_exception_by_error_code()` with that error
-code (or `get_exception_from_os_error()` with an `OSError` with that error code) returns
-an instance of that exception class.
+it with `register_for()`, which takes the error code’s name as an argument. Then, calling
+`get_exception_by_error_number()` with the matching error number returns an instance of
+that exception class.
 
 Error codes alone might not provide sufficient context to decide what exactly went wrong,
 however: `getxattr()` signals `EPERM` to indicate that a given file system object doesn’t
 support extended file attributes, for example, but it may be unwise to assume that’s the
-issue without checking whether the error did, in fact, come from `getxattr()`, even if
-the application doesn’t use any other system calls that document signalling `EPERM`.
+issue without checking whether the error did, in fact, come from `getxattr()`, even though
+this application doesn’t use any other system calls that document signalling `EPERM`.
 
-To provide the necessary context, the `get_exception_*()` functions require the caller to
+To provide the necessary context, `get_exception_by_error_number()` requires the caller to
 specify an “operation” – generally the name of the system call that signalled the error.
 
-Exceptions can be registered for a specific list of operations or for all operations that
-don’t have a more specific exception registered for them, and the `get_exception_*()`
-functions pick the appropriate exception class for operation they were called with.
+Exceptions can be registered for a specific list of operations, or for all operations that
+don’t have a more specific exception registered, and the `get_exception_by_error_number()`
+function picks the appropriate exception class for operation they were called with.
 
 Also, modules that use this module’s functionality can call `register_operation()` to
 associate a description for a given operation, which will then be used in the exception
 message, so that it can, for example, specifically explain that the application “Couldn’t
 collect the contents of” a given directory. See that functions docstring for details.
+
+To handle unexpected errors, exception classes can be registered for the dummy error names
+`UNEXPECTED` and `UNKNOWN`. See the documentation of `register_for()` for details.
 """
 
 from collections.abc import Callable
+import errno
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -47,21 +55,21 @@ type LowLevelFileErrorSubclassDecorator = Callable[
 
 # LOOKUP #################################################################################
 
-def get_exception_by_error_code(
-    error_code: int,
+def get_exception_by_error_number(
+    error_number: int,
     operation: str,
     path: Path | str | bytes,
     file_type: str = "file",
 ) -> "LowLevelFileError":
     """
-    Get an appropriate `LowLevelFileError` instance for the given error code.
+    Get an appropriate `LowLevelFileError` instance for the given error number.
 
     Note that the exception is *returned*, not raised.
 
     `operation` indicates what the application was doing when the error occurred. This is
     required because different exception classes may be registered for a given error code
-    for different operations. It is also used to construct the returned exception’s error
-    message; see `register_operation()` for details.
+    for different operations. The argument’s value is also used to construct the returned
+    exception’s error message; see `register_operation()` for details.
 
     `file_type` is used in the error message used by some `LowLevelFileError` subclasses,
     so that “The file doesn’t exist” can become “The directory doesn’t exist” if the file
@@ -69,14 +77,15 @@ def get_exception_by_error_code(
     single type of file system object, always using the “file” default will do.
     """
     path = as_path_object(path)
-    error_name = _ERROR_NAMES.get(error_code, UNKNOWN_ERROR_NAME)
+    error_name = errno.errorcode.get(error_number, UNKNOWN_ERROR_NAME)
     exception_class = (
-           _EXCEPTION_CLASSES.get((error_code, operation))
-        or _EXCEPTION_CLASSES.get((error_code, ALL_OPERATIONS))
-        or _EXCEPTION_CLASSES[UNKNOWN_ERROR_CODE, ALL_OPERATIONS]
+           _EXCEPTION_CLASSES.get((error_name, operation))
+        or _EXCEPTION_CLASSES.get((error_name, ALL_OPERATIONS))
+        or _EXCEPTION_CLASSES.get((UNEXPECTED_ERROR_NAME, operation))
+        or _EXCEPTION_CLASSES[UNEXPECTED_ERROR_NAME, ALL_OPERATIONS]
     )
     operation_verb = _OPERATION_VERBS.get(operation, DEFAULT_OPERATION_VERB)
-    return exception_class(path, error_code, error_name, operation_verb, file_type)
+    return exception_class(path, error_number, error_name, operation_verb, file_type)
 
 
 def get_exception_from_os_error(
@@ -87,11 +96,31 @@ def get_exception_from_os_error(
     """
     Get an appropriate `LowLevelFileError` instance for the given `OSError`.
 
-    This functions like `get_exception_by_error_code()`, but the error code and path are
-    taken from the given `OSError`.
+    This functions like `get_exception_by_error_number()`, but the error number and path
+    are taken from the given `OSError`.
     """
-    path = cause.filename or "UNKNOWN"
-    return get_exception_by_error_code(cause.errno, operation, path, file_type)
+    path = cause.filename or UNKNOWN_ERROR_NAME
+    return get_exception_by_error_number(cause.errno, operation, path, file_type)
+
+
+# SPECIAL VALUES #########################################################################
+
+# The operation name used to register an exception or operation description for all
+# operations that don’t have a more specific exception or description registered.
+ALL_OPERATIONS = "ALL"
+
+# A dummy error name used to register exception classes for used for error codes that have
+# a known name, but don’t have a exception class registered for that name. The exceptions
+# themselves use the error code’s name, not this value.
+UNEXPECTED_ERROR_NAME = "UNEXPECTED"
+
+# A dummy error name used to register exception classes that are used for error codes that
+# don’t have a known name. It’s also used as the error name when creating exceptions for
+# these error codes.
+UNKNOWN_ERROR_NAME = "UNKNOWN"
+
+# The operation description that is used if no other description has been registered.
+DEFAULT_OPERATION_VERB = "process"
 
 
 # REGISTRATION ###########################################################################
@@ -100,7 +129,7 @@ def register_operation(operation_name: str, verb: str) -> None:
     """
     Register a descriptive verb for an operation.
 
-    By default, the exceptions returned by `get_exception_by_error_code()` have an error
+    By default, the exceptions returned by `get_exception_by_error_number()` have an error
     message that starts with “Could not process”, followed by the path. The message would
     be clearer if the word “process” would be replaced with a more specific description;
     “collect the contents of” for errors during a `readdir` system call, for example.
@@ -117,53 +146,48 @@ def register_operation(operation_name: str, verb: str) -> None:
     _OPERATION_VERBS[operation_name] = verb
 
 
-# The operation name used to register an exception or operation description for all
-# operations that don’t have a more specific exception or description registered.
-ALL_OPERATIONS = "ALL"
-
-
 def register_for(
-    error_code: int,
     error_name: str,
     operations: str | list[str] = ALL_OPERATIONS,
 ) -> LowLevelFileErrorSubclassDecorator:
     """
-    Decorate a subclass of `LowLevelFileError` to indicate an error code it handles.
+    Register the decorated subclass of `LowLevelFileError` for the given error code.
 
-    That is, if such an exception class is decorated with `@register_for(2, "ENOENT")`,
-    `get_exception_by_error_code()` will return an instance of that exception class if
-    it is called with the error code 2.
+    If a suitable exception class is decorated with, say, `@register_for("EOVERFLOW")`,
+    calling `get_exception_by_error_number()` with the error number for `EOVERFLOW`, 84,
+    returns an instance of that exception class.
 
-    If `operations` is set to a string or list of strings, the decorated exception class
-    is only used if `get_exception_by_error_code()` is called with those operations.
+    If a list of operations is specified in the decorator, the exception is only used if
+    `get_exception_by_error_number()` is called with one of the listed operation names.
+    The default value, `"ALL"`, indicates that the decorated class should be used for any
+    operations that don’t have an exception class registered for them specifically.
 
-    Different exception classes can be registered for a given error code if at most one
-    such class doesn’t specify any operations and all other such classes specify lists of
-    error codes that do not overlap. In that case, the class that was registered without
-    an operation is only used for operations that was not used to register another class.
+    (That is, of class A is decorated with `@register_for("EOVERFLOW")` and class B is
+    decorated with `@register_for("EOVERFLOW", operations=["stat"])`, class B will be used
+    if `get_exception_by_error_number()` is called with the operation `"stat"`, and class
+    A will be used if it’s called with any other operation.)
 
-    The error name must be consistent for each registration for a given error code.
+    Instead of a regular error name, the special values `"UNEXPECTED"` and `"UNKNOWN"` can
+    be used. `"UNEXPECTED"` indicates that the decorated exception class should be used as
+    a fallback if no other exception class matches a given error number and operation, and
+    `"UNKNOWN"` indicates that the decorated exception class should be used if a given
+    error number cannot be mapped to an error name.
+
+    For both special values, operations can be specified in the same way as for regular
+    error names.
+
+    If another exception class has already been registered for a given error code and
+    operation, the function raises `ExistingExceptionClassRegistration`.
     """
     operations = [operations] if isinstance(operations, str) else operations
 
     def decorator(cls: LowLevelFileErrorSubclass) -> LowLevelFileErrorSubclass:
         for operation in operations:
-            _check_no_error_name_registered(error_code, error_name)
-            _check_no_exception_class_registered(error_code, operation, cls)
-            _ERROR_NAMES[error_code] = error_name
-            _EXCEPTION_CLASSES[error_code, operation] = cls
+            _check_no_exception_class_registered(error_name, operation, cls)
+            _EXCEPTION_CLASSES[error_name, operation] = cls
         return cls
 
     return decorator
-
-
-def register_as_default(
-    operations: str | list[str] = ALL_OPERATIONS,
-) -> LowLevelFileErrorSubclassDecorator:
-    """
-    Decorate a subclass of `LowLevelFileError` to indicate that it handles unknown errors.
-    """
-    return register_for(UNKNOWN_ERROR_CODE, UNKNOWN_ERROR_NAME, operations)
 
 
 # EXCEPTION CLASSES ######################################################################
@@ -187,55 +211,27 @@ class ExistingOperationRegistration(ExistingRegistration):
     existing_verb: str
 
 
-class ExistingErrorNameRegistration(ExistingRegistration):
-    """Raised if two different names are registered for an error code."""
-
-    MESSAGE = """
-        Cannot register the name “{proposed_error_name}” for the error code {error_code}:
-        The name “{existing_error_name}” has already been registered for that code
-    """
-    error_code: int
-    proposed_error_name: str
-    existing_error_name: str
-
-
 class ExistingExceptionClassRegistration(ExistingRegistration):
     """Raised if two exceptions are registered for one error code and operation."""
 
     MESSAGE = """
         Cannot register the exception class “{proposed_exception_class.__name__}”
-        for the error code {error_code} and the operation “{operation}”: The class
-        “{existing_exception_class.__name__}” has already been registered for that code
+        for the error name “{error_name}” and the operation “{operation}”: The class
+        “{existing_exception_class.__name__}” has already been registered for that name
         and operation
     """
-    error_code: int
+    error_name: str
     operation: str
     proposed_exception_class: LowLevelFileErrorSubclass
     existing_exception_class: LowLevelFileErrorSubclass
 
 
-# SPECIAL VALUES #########################################################################
-
-# The error name used used for unknown error codes.
-UNKNOWN_ERROR_NAME = "UNKNOWN"
-
-# A dummy error code that’s used to store the exception classes registered for unknown
-# errors. (The actual error code is used when creating instances of the exception class.)
-UNKNOWN_ERROR_CODE = -int.from_bytes(UNKNOWN_ERROR_NAME.encode("ascii"))
-
-# The operation description that is used if no other description has been registered.
-DEFAULT_OPERATION_VERB = "process"
-
-
 # REGISTRIES #############################################################################
 
-# Maps error codes to the corresponding error names.
-_ERROR_NAMES: dict[int, str] = {}
-
-# Maps tuples of error codes and operation names to the matching `LowLevelFileError`
-# subclass. The error code `UNKNOWN_ERROR_CODE` is used for exceptions that handle
-# unknown errors.
-_EXCEPTION_CLASSES: dict[tuple[int, str], LowLevelFileErrorSubclass] = {}
+# Maps tuples of error names and operation names to the matching `LowLevelFileError`
+# subclass. The error names `UNEXPECTED` and `UNKNOWN` are used for exceptions that
+# handle unexpected and unknown errors, respectively
+_EXCEPTION_CLASSES: dict[tuple[str, str], LowLevelFileErrorSubclass] = {}
 
 # Maps operation names to a descriptive verb for that operation.
 _OPERATION_VERBS: dict[str, str] = {}
@@ -250,15 +246,8 @@ def _check_no_operation_verb_registered(operation_name: str, proposed_verb: str)
         raise ExistingOperationRegistration(operation_name, proposed_verb, existing_verb)
 
 
-def _check_no_error_name_registered(error_code: int, proposed_name: str) -> None:
-    """Raise an exception if there’s already a different name for the given error code."""
-    existing_name = _ERROR_NAMES.get(error_code)
-    if existing_name and existing_name != proposed_name:
-        raise ExistingErrorNameRegistration(error_code, proposed_name, existing_name)
-
-
 def _check_no_exception_class_registered(
-    error_code: int,
+    error_name: str,
     operation: str,
     proposed_class: LowLevelFileErrorSubclass,
 ) -> None:
@@ -266,6 +255,7 @@ def _check_no_exception_class_registered(
     Raise an exception if there’s already an exception class for the given error code and
     operation.
     """
-    key = (error_code, operation)
-    if existing_class := _EXCEPTION_CLASSES.get(key):
-        raise ExistingExceptionClassRegistration(*key, proposed_class, existing_class)
+    if existing_class := _EXCEPTION_CLASSES.get((error_name, operation)):
+        raise ExistingExceptionClassRegistration(
+            error_name, operation, proposed_class, existing_class,
+        )

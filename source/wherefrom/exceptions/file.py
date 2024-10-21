@@ -4,17 +4,14 @@ Define exception classes for file operations.
 Exception classes (other than base classes) have decorators that register the class for
 one or more error codes, or for one or more error codes encountered during one or more
 specific operations. This allows exceptions to be automatically picked and instantiated
-based on an error code, an operation, and a path. See the `wherefrom.exceptions.registry`
-module for details.
-
-See https://github.com/apple-open-source/macos/blob/master/xnu/bsd/sys/errno.h for a list
-of all defined error codes and the corresponding names.
+based on an error number, an operation name, and a path. See the documentation of the
+`wherefrom.exceptions.registry` module for details.
 """
 
 from pathlib import Path
 
 from wherefrom.exceptions.base import WhereFromException
-from wherefrom.exceptions.registry import register_for, register_as_default
+from wherefrom.exceptions.registry import register_for
 
 
 # BASE CLASSES ###########################################################################
@@ -44,7 +41,7 @@ class LowLevelFileError(FileError):
     using the “file” default will do.
     """
     MESSAGE_PREFIX = "Could not {operation_verb} “{path}”"
-    error_code: int
+    error_number: int
     error_name: str
     operation_verb: str = "process"
     file_type: str = "file"
@@ -52,8 +49,8 @@ class LowLevelFileError(FileError):
 
 # COMMON ERRORS ##########################################################################
 
-@register_for(2, "ENOENT")
-@register_for(20, "ENOTDIR", operations=["stat", "getxattr"])
+@register_for("ENOENT")
+@register_for("ENOTDIR", operations=["stat", "getxattr"])
 class MissingFile(LowLevelFileError):
     """
     Raised if a file system object that’s supposed to exist doesn’t, in fact, exist.
@@ -68,7 +65,7 @@ class MissingFile(LowLevelFileError):
     MESSAGE = "The {file_type} doesn’t exist"
 
 
-@register_for(13, "EACCES")
+@register_for("EACCES")
 class NoReadPermission(LowLevelFileError):
     """
     Raised if a file system object that’s supposed to be readable (or searchable) isn’t.
@@ -78,7 +75,7 @@ class NoReadPermission(LowLevelFileError):
 
 # BAD FILE STRUCTURES ####################################################################
 
-@register_for(62, "ELOOP")
+@register_for("ELOOP")
 class TooManySymlinks(LowLevelFileError):
     """
     Raised if too many symbolic links were encountered when resolving a path.
@@ -91,7 +88,7 @@ class TooManySymlinks(LowLevelFileError):
     MESSAGE = "There were too many symbolic links to traverse"
 
 
-@register_for(63, "ENAMETOOLONG")
+@register_for("ENAMETOOLONG")
 class OverlongPath(LowLevelFileError):
     """
     Raised if a path violates the system’s length limits.
@@ -115,7 +112,7 @@ class OverlongPath(LowLevelFileError):
 
 # ERRORS CAUSED BY CONCURRENT MODIFICATIONS ##############################################
 
-@register_for(20, "ENOTDIR", operations=["readdir"])
+@register_for("ENOTDIR", operations=["readdir"])
 class ConcurrentlyReplacedDirectory(LowLevelFileError):
     """
     Raised if a file-system object that should be a directory but isn’t one is encountered
@@ -134,7 +131,7 @@ class ConcurrentlyReplacedDirectory(LowLevelFileError):
 
 # INTERNAL ERRORS ########################################################################
 
-@register_for(5, "EIO")
+@register_for("EIO")
 class FileIOError(LowLevelFileError):
     """Raised if there was an I/O error while accessing the file system."""
     MESSAGE = "An I/O error occurred"
@@ -142,7 +139,7 @@ class FileIOError(LowLevelFileError):
 
 # UNEXPECTED ERRORS ######################################################################
 
-class UnexpectedFileError(LowLevelFileError):
+class UnexpectedFileErrorError(LowLevelFileError):
     """
     The base class for exceptions that are raised if an unexpected error occurs while
     accessing the file system.
@@ -150,11 +147,11 @@ class UnexpectedFileError(LowLevelFileError):
     MESSAGE = "An unexpected error ocurred ({error_name})"
 
 
-@register_for(9, "EBADF", operations=["readdir"])
-@register_for(14, "EFAULT", operations=["stat", "getxattr"])
-@register_for(22, "EINVAL", operations=["getxattr"])
-@register_for(84, "EOVERFLOW", operations=["stat"])
-class SupposedlyImpossibleFileError(UnexpectedFileError):
+@register_for("EBADF", operations=["readdir"])
+@register_for("EFAULT", operations=["stat", "getxattr"])
+@register_for("EINVAL", operations=["getxattr"])
+@register_for("EOVERFLOW", operations=["stat"])
+class SupposedlyImpossibleFileError(UnexpectedFileErrorError):
     """
     Raised if a file operation fails with an error code that is documented but wasn’t
     thought to be possible in the specific circumstances under which the file operation
@@ -171,10 +168,15 @@ class SupposedlyImpossibleFileError(UnexpectedFileError):
     # would indicate a bug in the Python standard library.
 
 
-@register_as_default()
-class UnknownFileError(UnexpectedFileError):
+@register_for("UNEXPECTED")
+class UnexpectedFileError(UnexpectedFileErrorError):
+    """Raised if a file operation fails with an unexpected but known error number."""
+
+
+@register_for("UNKNOWN")
+class UnknownFileError(UnexpectedFileErrorError):
     """
-    Raised if a file operation fails with an error code it wasn’t known to be able to fail
-    with.
+    Raised if a file operation fails with an error number that cannot be mapped to an
+    error name.
     """
-    MESSAGE = "An unknown error ocurred (error code {error_code})"
+    MESSAGE = "An unknown error ocurred ({error_number})"

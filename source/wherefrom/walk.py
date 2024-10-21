@@ -130,8 +130,8 @@ def _process_directory(path: Path, state: WalkState) -> None:
     _sort_sibling_paths(subdirectory_paths)
     _sort_sibling_paths(candidate_paths)
     state.pending_directory_paths.extend(subdirectory_paths)
-    for file_path in candidate_paths:
-        _process_where_from_candidate(file_path, state)
+    for candidate_path in candidate_paths:
+        _process_where_from_candidate(candidate_path, state)
 
 
 def _directory_entries(path: Path, state: WalkState) -> Iterator[os.DirEntry[str]]:
@@ -190,8 +190,8 @@ def _process_where_from_candidate(path: Path, state: WalkState) -> None:
 def _sort_sibling_paths(paths: list[Path]) -> None:
     """
     Sort the given paths, in place, by their last component. (The function assumes that
-    all other path components match between all given paths since otherwise, the order
-    wouldn’t make much sense, but it doesn’t verify that assumption.)
+    all other path components match between all given paths, since the order wouldn’t
+    make much sense otherwise, but it doesn’t verify that assumption.)
 
     Currently, this function simply sorts paths in ASCIIbetical order.
     """

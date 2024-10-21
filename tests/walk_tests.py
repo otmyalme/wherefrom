@@ -41,7 +41,7 @@ def test__process_directory__not_readable(environment):
     exception = exceptions[0]
     assert isinstance(exception, NoReadPermission)
     assert exception.path == problem_path
-    assert exception.error_code == 13
+    assert exception.error_number == 13
     assert exception.error_name == "EACCES"
     assert exception.operation_verb == "collect the contents of"
     assert exception.file_type == "directory"
@@ -63,7 +63,7 @@ def test__process_directory__not_a_directory(environment):
     exception = exceptions[0]
     assert isinstance(exception, ConcurrentlyReplacedDirectory)
     assert exception.path == problem_path
-    assert exception.error_code == 20
+    assert exception.error_number == 20
     assert exception.error_name == "ENOTDIR"
     assert exception.operation_verb == "collect the contents of"
     assert exception.file_type == "directory"
@@ -110,7 +110,7 @@ def test__process_where_from_candidate__not_readable(environment):
     exception = exceptions[0]
     assert isinstance(exception, NoReadPermission)
     assert exception.path == problem_path
-    assert exception.error_code == 13
+    assert exception.error_number == 13
     assert exception.error_name == "EACCES"
     assert exception.operation_verb == "read the “where from” value of"
     assert exception.file_type == "file"

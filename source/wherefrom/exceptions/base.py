@@ -6,7 +6,6 @@ The application’s exception hierarchy is structured as follows:
     WhereFromException
      ├─ ExistingRegistration
      │   ├─ ExistingOperationRegistration
-     │   ├─ ExistingErrorNameRegistration
      │   └─ ExistingExceptionClassRegistration
      ├─ FileError
      │   ├─ LowLevelFileError
@@ -16,8 +15,9 @@ The application’s exception hierarchy is structured as follows:
      │   │   ├─ OverlongPath
      │   │   ├─ ConcurrentlyReplacedDirectory
      │   │   ├─ FileIOError
-     │   │   ├─ UnexpectedFileError
+     │   │   ├─ UnexpectedFileErrorError
      │   │   │   ├─ SupposedlyImpossibleFileError
+     │   │   │   ├─ UnexpectedFileError
      │   │   │   └─ UnknownFileError
      │   │   └─ WhereFromValueReadingError
      │   │       ├─ NoWhereFromValue

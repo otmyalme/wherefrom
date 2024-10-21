@@ -16,7 +16,9 @@ from typing import cast
 from wherefrom.exceptions.read import (
     MissingExternalLibrary, MissingExternalLibraryFunction,
 )
-from wherefrom.exceptions.registry import get_exception_by_error_code, register_operation
+from wherefrom.exceptions.registry import (
+    get_exception_by_error_number, register_operation,
+)
 
 
 # PUBLIC FUNCTIONS #######################################################################
@@ -100,7 +102,7 @@ def _call_getxattr(path: bytes, buffer: Buffer | None = None) -> int:
         0,  # Options; can be used to avoid following symbolic links
     )
     if result < 0:
-        raise get_exception_by_error_code(ctypes.get_errno(), "getxattr", path)
+        raise get_exception_by_error_number(ctypes.get_errno(), "getxattr", path)
     else:
         return result
 
