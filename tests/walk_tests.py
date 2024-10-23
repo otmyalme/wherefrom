@@ -10,8 +10,9 @@ from wherefrom.walk import (
     walk_directory_trees, WalkState, _process_directory, _process_where_from_candidate,
 )
 from wherefrom.exceptions.file import (
-    NoReadPermission, TooManySymlinks, ConcurrentlyReplacedDirectory,
+    MissingFile, NoReadPermission, TooManySymlinks, ConcurrentlyReplacedDirectory,
 )
+from wherefrom.exceptions.read import NoWhereFromValue
 
 from tests.tools.environment.structure import ONE_URL, TWO_URLS
 
@@ -20,7 +21,7 @@ from tests.tools.environment.structure import ONE_URL, TWO_URLS
 
 def test__process_directory__missing(environment):
     """Does `_process_directory()` ignore missing files?"""
-    base_path = environment / "simple"
+    base_path = environment / "errors"
     problem_path = base_path / "no-such-file.html"
     state = WalkState((base_path,))
     _process_directory(problem_path, state)
@@ -143,6 +144,18 @@ def test_walk_directory_trees__errors(environment: Path):
             path / "not-readable", 13, "EACCES", "collect the contents of", "directory",
         ),
         TooManySymlinks(path / "too-many-symlinks" / "33", 62, "ELOOP", "process"),
+    ]
+
+
+def test_walk_directory_trees__ignorable_errors_base_paths(environment: Path):
+    """Are errors that are usually ignored not ignored when they come from base paths?"""
+    missing_path = environment / "errors" / "no-such-directory"
+    valueless_path = environment / "errors" / "no-value.html"
+    results, errors = walk_directory_trees(missing_path, valueless_path)
+    assert results == []
+    assert errors == [
+        MissingFile(missing_path, 2, "ENOENT", "collect the contents of", "directory"),
+        NoWhereFromValue(valueless_path, 93, "ENOATTR", "read the “where from” value of"),
     ]
 
 

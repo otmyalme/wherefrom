@@ -80,8 +80,20 @@ class WalkState:
         self._paths_and_values.append((path, where_from_value))
 
     def handle_exception(self, exception: FileError) -> None:
-        """Add the given exception to the walk results, unless it’s safe to ignore."""
-        if not exception.ignore_while_walking:
+        """
+        Add the given exception to the walk results, unless it’s safe to ignore.
+
+        The method ignores exceptions that have been marked as `ignore_while_walking`,
+        unless the path the exception is for is a base path. (If a random file that was
+        found somewhere in a directory tree the user has specified doesn’t have a “where
+        from” value or disappears before the value can be read, that’s not something worth
+        notifying the user about, but if a path they explicitly specified on the command
+        line doesn’t exist or doesn’t have a “where from” value, the user will want to
+        know about that.)
+        """
+        if exception.ignore_while_walking and exception.path not in self.base_paths:
+            pass
+        else:
             self._exceptions.append(exception)
 
     def get_result(self) -> WalkResults:
@@ -99,10 +111,10 @@ def _process_base_paths(state: WalkState) -> None:
 
 def _process_base_path(base_path: Path, state: WalkState) -> None:
     """Recursively process the given base path of the given state."""
-    if base_path.is_dir():  # Includes symlinks to directories
-        _process_directory_tree(base_path, state)
-    else:
+    if base_path.is_file():
         _process_where_from_candidate(base_path, state)
+    else:  # Treating everything else as a directory results in the appropriate exception.
+        _process_directory_tree(base_path, state)
 
 
 def _process_directory_tree(path: Path, state: WalkState) -> None:
