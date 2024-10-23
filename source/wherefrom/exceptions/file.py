@@ -9,6 +9,7 @@ based on an error number, an operation name, and a path. See the documentation o
 """
 
 from pathlib import Path
+from typing import ClassVar
 
 from wherefrom.exceptions.base import WhereFromException
 from wherefrom.exceptions.registry import register_for
@@ -24,6 +25,7 @@ class FileError(WhereFromException):
     The exceptions that can occur while parsing a file’s “where from” value also inherit
     from this class.
     """
+    ignore_while_walking: ClassVar[bool] = False
     path: Path
 
 
@@ -63,6 +65,7 @@ class MissingFile(LowLevelFileError):
     exception is used if an operation that works on non-directories fails with that error.
     """
     MESSAGE = "The {file_type} doesn’t exist"
+    ignore_while_walking = True
 
 
 @register_for("EACCES")

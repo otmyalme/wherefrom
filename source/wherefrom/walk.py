@@ -15,9 +15,8 @@ from pathlib import Path
 
 from wherefrom.read import read_binary_where_from_value
 from wherefrom.parse import parse_binary_where_from_value
-from wherefrom.exceptions.file import FileError, MissingFile
-from wherefrom.exceptions.read import NoWhereFromValue
 from wherefrom.exceptions.registry import get_exception_from_os_error, register_operation
+from wherefrom.exceptions.file import FileError
 
 
 # TYPES ##################################################################################
@@ -81,10 +80,8 @@ class WalkState:
         self._paths_and_values.append((path, where_from_value))
 
     def handle_exception(self, exception: FileError) -> None:
-        """
-        Add the given exception to the walk results, but ignore `MissingFile` exceptions.
-        """
-        if not isinstance(exception, MissingFile):
+        """Add the given exception to the walk results, unless it’s safe to ignore."""
+        if not exception.ignore_while_walking:
             self._exceptions.append(exception)
 
     def get_result(self) -> WalkResults:
@@ -171,14 +168,11 @@ def _classify_directory_entry(
 def _process_where_from_candidate(path: Path, state: WalkState) -> None:
     """
     Attempt to read the “where from” value of the file system object at the given path
-    and add the result to the given state. Ignore errors due to missing values or files.
-    Add other errors to the given state.
+    and add the result to the given state.
     """
     try:
         binary_value = read_binary_where_from_value(path)
         value = parse_binary_where_from_value(binary_value, path)
-    except (NoWhereFromValue, MissingFile):
-        pass
     except FileError as e:
         state.handle_exception(e)
     else:

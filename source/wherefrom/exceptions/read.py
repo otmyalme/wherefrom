@@ -28,6 +28,7 @@ class WhereFromValueReadingError(LowLevelFileError):
 class NoWhereFromValue(WhereFromValueReadingError, KeyError):
     """Raised when reading the “where from” value of a file that doesn’t have one."""
     MESSAGE = "The {file_type} doesn’t have the value set"
+    ignore_while_walking = True
 
 
 @register_for("ENOTSUP", operations=["getxattr"])
