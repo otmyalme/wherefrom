@@ -6,6 +6,9 @@ version = "0.1.0"
 requires-python = ">= 3.12"
 dependencies = []
 
+[project.scripts]
+wherefrom = "wherefrom.run:run"
+
 
 # BUILDING ###############################################################################
 
@@ -49,6 +52,7 @@ generate-html-coverage-report = "coverage html {args}"
 print-coverage-report = "coverage report {args}"
 print-coverage-percentage = "coverage report --fail-under 0 --format total"
 erase-coverage-data = "coverage erase"
+run-wherefrom = "wherefrom {args}"
 
 [tool.pytest.ini_options]
 addopts = "--no-header"
